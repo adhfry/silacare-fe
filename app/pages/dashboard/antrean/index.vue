@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, Copy, Check, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
+import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -24,7 +24,6 @@ interface QueueItem {
   qr_available: boolean
   qr_expired: boolean
   qr_image: string | null
-  qr_text: string | null
   sudah_diverifikasi: boolean
   layanan: QueueLayanan[]
   pembayaran: { total_biaya: string | null; status: string }
@@ -128,14 +127,6 @@ const reviseDiff = computed(() => {
   const remove = reviseTargetQueue.value.layanan.filter((l) => !reviseSelectedLayanan.value.includes(l.id))
   return { add, remove }
 })
-
-const copiedQrId = ref<number | null>(null)
-function copyQrText(q: QueueItem) {
-  if (!q.qr_text) return
-  navigator.clipboard?.writeText(q.qr_text)
-  copiedQrId.value = q.id
-  setTimeout(() => { if (copiedQrId.value === q.id) copiedQrId.value = null }, 2000)
-}
 
 // Fallback kalau petugas tidak bisa scan QR pasien -- pasien sendiri yang
 // memindai QR (rotasi 15 detik) yang ditampilkan di layar admin. Backend
@@ -624,15 +615,6 @@ onMounted(async () => {
                 <QrCode class="size-3.5" /> Tunjukkan QR ini di loket pendaftaran
               </p>
               <img :src="q.qr_image" alt="QR check-in" class="mx-auto size-36 rounded-xl border border-neutral-200 bg-white">
-              <button
-                v-if="q.qr_text" type="button"
-                class="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-neutral-500"
-                @click="copyQrText(q)"
-              >
-                <Check v-if="copiedQrId === q.id" class="size-3.5 text-secondary-600" />
-                <Copy v-else class="size-3.5" />
-                {{ copiedQrId === q.id ? 'Kode tersalin' : 'Kendala scan? Salin kode' }}
-              </button>
 
               <div class="mt-3 border-t border-neutral-200 pt-3">
                 <p class="mb-1.5 flex items-center justify-center gap-1 text-[11px] text-neutral-400">

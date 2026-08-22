@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, FileWarning, QrCode, Copy, Check, Clock3, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
+import { Download, FileWarning, QrCode, Clock3, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
 import { isAbnormalResult } from '~/utils/resultStatus'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
@@ -36,7 +36,6 @@ interface ResultDetail {
   kesimpulan: string | null
   qr_expired: boolean
   qr_image: string | null
-  qr_text: string | null
   sudah_diverifikasi: boolean
   layanan: LayananItem[]
   biaya: Biaya
@@ -50,17 +49,9 @@ const auth = useAuthStore()
 const detail = ref<ResultDetail | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
-const copied = ref(false)
 
 const suratHasilLabId = computed(() => detail.value?.id ?? null)
 const { status: queueStatus, start: startQueuePolling } = useCfdQueueStatus(suratHasilLabId)
-
-function copyQrText() {
-  if (!detail.value?.qr_text) return
-  navigator.clipboard?.writeText(detail.value.qr_text)
-  copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
-}
 
 // Fallback kalau petugas tidak bisa scan QR pasien.
 const showScanner = ref(false)
@@ -209,20 +200,6 @@ function isAbnormal(item: ResultItem): boolean {
           </p>
           <img :src="detail.qr_image" alt="QR check-in" class="mx-auto size-48 rounded-xl border border-neutral-100">
           <p class="mt-3 text-xs text-neutral-400">Petugas akan memindai QR ini agar pemeriksaan Anda otomatis terisi</p>
-
-          <div v-if="detail.qr_text" class="mt-3">
-            <p class="text-xs text-neutral-400">Kendala scan? Petugas dapat memasukkan kode ini secara manual:</p>
-            <p class="mt-1.5 break-all rounded-lg bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-700">{{ detail.qr_text }}</p>
-          </div>
-
-          <button
-            type="button" class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-500"
-            @click="copyQrText"
-          >
-            <Check v-if="copied" class="size-3.5 text-secondary-600" />
-            <Copy v-else class="size-3.5" />
-            {{ copied ? 'Kode tersalin' : 'Salin kode' }}
-          </button>
 
           <div class="mt-4 border-t border-neutral-100 pt-4">
             <p class="mb-1.5 flex items-center justify-center gap-1 text-xs text-neutral-400">

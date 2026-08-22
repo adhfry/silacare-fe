@@ -111,13 +111,12 @@ onBeforeUnmount(stopScan)
         </div>
         <p class="mb-3 text-xs text-neutral-500">Arahkan kamera ke QR yang ditampilkan petugas di loket.</p>
 
-        <div v-if="isPreparing" class="flex flex-col items-center justify-center py-10">
-          <div class="size-8 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
-          <p class="mt-2 text-xs text-neutral-400">Menyiapkan kamera...</p>
-        </div>
-
-        <div v-else class="relative overflow-hidden rounded-xl bg-black">
+        <div class="relative overflow-hidden rounded-xl bg-black">
           <video :id="videoId" ref="videoRef" autoplay playsinline muted class="min-h-64 w-full object-cover" />
+          <div v-if="isPreparing" class="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+            <div class="size-8 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+            <p class="mt-2 text-xs text-neutral-300">Menyiapkan kamera...</p>
+          </div>
           <div v-if="isScanning" class="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div class="size-40 rounded-lg border-2 border-white/80" />
           </div>
