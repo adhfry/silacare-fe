@@ -5,6 +5,9 @@ interface PatientProfile {
   status: string
   phone: string
   phone_verified: boolean
+  // true HANYA utk akun hasil klaim-via-email (nomor SiLAKES lama bukan WA
+  // aktif) -- lihat modal wajib di layouts/dashboard.vue.
+  needs_wa_verification: boolean
   last_login_at: string | null
   completeness: { percent: number; missing_fields: string[] } | null
   has_pending_update_request: boolean

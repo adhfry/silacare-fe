@@ -374,6 +374,12 @@ async function submitNewPatient() {
       >
         {{ resendCooldown > 0 ? `Kirim ulang dalam ${formatCooldown(resendCooldown)}` : 'Kirim ulang kode OTP' }}
       </button>
+      <p class="text-center text-xs text-neutral-400">
+        Nomor tidak aktif di WhatsApp?
+        <NuxtLink :to="`/klaim-akun?nik=${flow.nik}&phone=${flow.phone}`" class="font-semibold text-primary-600 underline underline-offset-2">
+          Klaim lewat Email
+        </NuxtLink>
+      </p>
     </div>
 
     <!-- Step: set password (pasien lama) -->
