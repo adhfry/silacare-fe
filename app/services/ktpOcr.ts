@@ -6,8 +6,22 @@
 // (browser pasien -> Gemini langsung), TIDAK ada endpoint OCR di backend.
 import { GoogleGenAI } from '@google/genai'
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY }) as any
+// Client dibuat LAZY (bukan langsung di top-level module) -- top-level
+// `new GoogleGenAI(...)` dieksekusi begitu modul ini di-import, termasuk
+// saat SSR (server-side render halaman yang memuat komponen ini, mis.
+// /daftar). Di server, import.meta.env.VITE_GEMINI_API_KEY TIDAK tersedia
+// (variabel VITE_* hanya di-inject ke bundle client), jadi constructor-nya
+// throw ("An API Key must be set when running in a browser") dan menjatuhkan
+// SELURUH render halaman dengan 500 -- padahal OCR ini murni client-side,
+// baru benar-benar dipanggil saat pasien memfoto KTP di browser.
+let ai: any = null
+function getAi() {
+  if (!ai) {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
+    ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+  }
+  return ai
+}
 
 const KTP_OCR_PROMPT = `Anda adalah sistem OCR untuk membaca KTP Indonesia. Ekstrak informasi dari gambar KTP ini dengan sangat teliti.
 
@@ -55,7 +69,7 @@ export interface KtpOcrResult {
 export async function scanKtpWithGemini(base64Image: string): Promise<KtpOcrResult> {
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image
 
-  const response = await ai.models.generateContent({
+  const response = await getAi().models.generateContent({
     model: 'gemini-3.5-flash-lite',
     contents: [
       {
