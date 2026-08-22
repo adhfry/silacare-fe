@@ -196,7 +196,7 @@ async function submitRegister() {
       </div>
       <h2 class="font-heading mt-4 text-lg font-bold text-neutral-900">Belum Waktunya Mendaftar</h2>
       <p class="mt-2 max-w-xs text-sm text-neutral-500">
-        Pendaftaran CFD online hanya dibuka saat acara berlangsung, setiap hari Minggu mulai pukul 07.00 WIB.
+        Pendaftaran pemeriksaan gratis di CFD hanya dibuka saat acara berlangsung, setiap hari Minggu mulai pukul 07.00 WIB.
         Silakan datang langsung ke Taman Bunga, depan Gedung MPP Kabupaten Sumenep pada
         <span class="font-semibold text-neutral-700">{{ nextAvailableAt ? formatFullDate(nextAvailableAt) : '-' }} WIB</span>.
       </p>

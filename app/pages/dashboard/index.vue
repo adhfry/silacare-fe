@@ -163,7 +163,7 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
       <ChevronRight class="size-5 text-primary-400" />
     </NuxtLink>
 
-    <!-- Info & status CFD gratis -->
+    <!-- Info & status pemeriksaan gratis di CFD -->
     <div v-if="cfdLoading" class="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
       <div class="flex items-center gap-3 bg-neutral-50 p-4">
         <SkeletonBlock rounded="rounded-xl" class="size-9 shrink-0" />
