@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Camera, ImageUp, RotateCcw, PartyPopper, AlertTriangle } from 'lucide-vue-next'
+import { Camera, ImageUp, RotateCcw, PartyPopper, AlertTriangle, Pencil } from 'lucide-vue-next'
 import { scanKtpWithGemini, type KtpOcrResult } from '~/services/ktpOcr'
 import { parseNik } from '~/utils/nik'
 
@@ -98,7 +98,49 @@ function retakePhoto() {
   step.value = 'foto'
 }
 
+// NIK terkunci secara default (hasil pindai KTP + step NIK sebelumnya) -- lihat
+// catatan yang sama di app/pages/daftar/index.vue untuk alasannya.
+const nikEditable = ref(false)
+const nikCheckLoading = ref(false)
+const nikCheckMessage = ref('')
+let nikCheckTimer: ReturnType<typeof setTimeout> | undefined
+
+async function checkNikExists() {
+  nikCheckLoading.value = true
+  try {
+    const data = await api.post<{ status: string }>('/cfd/check-nik', { nik: flow.value.nik })
+    nikCheckMessage.value = data.status !== 'not_found'
+      ? 'NIK ini ternyata sudah terdaftar di SiLAKES. Kembali ke awal dan gunakan NIK tersebut langsung di halaman cek CFD.'
+      : ''
+  } catch {
+    // Bantuan UX saja -- backend tetap validasi ulang penuh saat submit.
+  } finally {
+    nikCheckLoading.value = false
+  }
+}
+
+watch(() => flow.value.nik, (val) => {
+  nikCheckMessage.value = ''
+  clearTimeout(nikCheckTimer)
+
+  const parsed = parseNik(val)
+  if (parsed.valid) {
+    if (parsed.tglLahir) form.tgl_lahir = parsed.tglLahir
+    if (parsed.gender) form.gender = parsed.gender
+  }
+  // Cek ke backend begitu sudah 16 digit, TERLEPAS dari parseNik valid atau
+  // tidak di klien -- backend adalah otoritas sesungguhnya, lihat
+  // checkNikExists().
+  if (val.replace(/\D/g, '').length === 16) {
+    nikCheckTimer = setTimeout(checkNikExists, 400)
+  }
+})
+
 function goToPilih() {
+  if (nikCheckMessage.value) {
+    errorMessage.value = nikCheckMessage.value
+    return
+  }
   errorMessage.value = ''
   if (!form.name || !form.gender || !form.tempat_lahir || !form.tgl_lahir || !form.phone || !form.alamat) {
     errorMessage.value = 'Lengkapi semua data wajib sebelum melanjutkan'
@@ -202,25 +244,43 @@ async function submitRegisterNew() {
         </span>
       </AppAlert>
 
-      <AppInput v-model="form.name" label="Nama Lengkap" />
+      <div>
+        <span class="mb-1.5 block text-sm font-medium text-neutral-700">NIK<span class="text-danger"> *</span></span>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="flow.nik" :disabled="!nikEditable" inputmode="numeric" maxlength="16" placeholder="16 digit sesuai KTP"
+            class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] text-neutral-900 outline-none transition-colors focus:border-primary-500 disabled:bg-neutral-100 disabled:text-neutral-500"
+          >
+          <button
+            type="button"
+            class="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 text-neutral-500 active:scale-95"
+            :class="nikEditable ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-neutral-200'"
+            :aria-label="nikEditable ? 'Kunci NIK' : 'Ubah NIK'"
+            @click="nikEditable = !nikEditable"
+          >
+            <Pencil class="size-4" />
+          </button>
+        </div>
+        <p v-if="nikCheckLoading" class="mt-1.5 text-xs text-neutral-400">Memeriksa NIK...</p>
+        <p v-else-if="nikCheckMessage" class="mt-1.5 text-xs font-medium text-danger">{{ nikCheckMessage }}</p>
+      </div>
+
+      <AppInput v-model="form.name" label="Nama Lengkap" placeholder="Sesuai KTP" required />
       <div class="grid grid-cols-2 gap-3">
         <label class="block">
-          <span class="mb-1.5 block text-sm font-medium text-neutral-700">Jenis Kelamin</span>
+          <span class="mb-1.5 block text-sm font-medium text-neutral-700">Jenis Kelamin<span class="text-danger"> *</span></span>
           <select v-model="form.gender" class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] outline-none focus:border-primary-500">
             <option value="">Pilih</option>
             <option value="L">Laki-laki</option>
             <option value="P">Perempuan</option>
           </select>
         </label>
-        <AppInput v-model="form.tgl_lahir" label="Tanggal Lahir" type="date" />
+        <AppInput v-model="form.tgl_lahir" label="Tanggal Lahir" type="date" required />
       </div>
-      <AppInput v-model="form.tempat_lahir" label="Tempat Lahir" />
-      <AppInput v-model="form.phone" label="Nomor HP Aktif" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" />
-      <AppInput v-model="form.alamat" label="Alamat (sesuai KTP)" />
-      <div class="grid grid-cols-2 gap-3">
-        <AppInput v-model="form.kecamatan" label="Kecamatan" />
-        <AppInput v-model="form.kel_desa" label="Kelurahan/Desa" />
-      </div>
+      <AppInput v-model="form.tempat_lahir" label="Tempat Lahir" placeholder="Contoh: Sumenep" required />
+      <AppInput v-model="form.phone" label="Nomor HP Aktif" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" required />
+      <AppInput v-model="form.alamat" label="Alamat (sesuai KTP)" placeholder="Nama jalan, nomor rumah" required />
+      <WilayahPicker v-model:kecamatan="form.kecamatan" v-model:kel-desa="form.kel_desa" />
       <AppInput v-model="form.rt_rw" label="RT/RW" placeholder="001/002" />
 
       <AppButton type="submit" class="w-full">Lanjutkan</AppButton>

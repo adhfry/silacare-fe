@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ShieldCheck, Camera, ImageUp, RotateCcw, AlertTriangle, PartyPopper } from 'lucide-vue-next'
+import { ShieldCheck, Camera, ImageUp, RotateCcw, AlertTriangle, PartyPopper, Pencil } from 'lucide-vue-next'
+import { parseNik } from '~/utils/nik'
 
 definePageMeta({ layout: 'guest' })
 
@@ -203,6 +204,51 @@ const newPhone = ref('')
 const newPassword = ref('')
 const newPasswordConfirm = ref('')
 
+// NIK di step 'new-form' terkunci secara default (hasil pindai KTP + step
+// identitas sebelumnya) -- OCR tidak selalu sempurna, jadi disediakan tombol
+// pensil untuk membuka kunci kalau user perlu mengoreksi. Setiap kali NIK
+// berubah jadi 16 digit valid, tanggal lahir & jenis kelamin disinkronkan
+// ulang dari NIK, dan NIK dicek ulang ke backend (siapa tahu ternyata sudah
+// terdaftar) -- supaya koreksi manual tidak diam-diam membuat data pasien
+// baru yang sebenarnya duplikat dari pasien yang sudah ada.
+const nikEditable = ref(false)
+const nikCheckLoading = ref(false)
+const nikCheckMessage = ref('')
+let nikCheckTimer: ReturnType<typeof setTimeout> | undefined
+
+async function checkNikExists() {
+  nikCheckLoading.value = true
+  try {
+    const data = await api.post<{ status: string }>('/cfd/check-nik', { nik: flow.nik })
+    nikCheckMessage.value = data.status !== 'not_found'
+      ? 'NIK ini ternyata sudah terdaftar di SiLAKES. Kembali ke awal dan gunakan alur masuk/aktivasi akun, bukan daftar pasien baru.'
+      : ''
+  } catch {
+    // Pengecekan ini bersifat bantuan UX, bukan validasi wajib -- kalau gagal
+    // (mis. jaringan), submit tetap akan divalidasi ulang penuh di backend.
+  } finally {
+    nikCheckLoading.value = false
+  }
+}
+
+watch(() => flow.nik, (val) => {
+  nikCheckMessage.value = ''
+  clearTimeout(nikCheckTimer)
+
+  const parsed = parseNik(val)
+  if (parsed.valid) {
+    if (parsed.tglLahir) scan.form.tgl_lahir = parsed.tglLahir
+    if (parsed.gender) scan.form.gender = parsed.gender
+  }
+  // Cek ke backend begitu sudah 16 digit, TERLEPAS dari parseNik valid atau
+  // tidak di klien -- backend adalah otoritas sesungguhnya (mis. NIK lama di
+  // data existing yang formatnya sedikit ganjil tapi tetap NIK asli), lihat
+  // checkNikExists().
+  if (val.replace(/\D/g, '').length === 16) {
+    nikCheckTimer = setTimeout(checkNikExists, 400)
+  }
+})
+
 function goToNewForm() {
   // Kalau OCR gagal total, user tetap bisa lanjut isi manual.
   flow.step = 'new-form'
@@ -224,6 +270,10 @@ onMounted(() => {
 
 async function submitNewPatient() {
   errorMessage.value = ''
+  if (nikCheckMessage.value) {
+    errorMessage.value = nikCheckMessage.value
+    return
+  }
   const f = scan.form
   if (!f.name || !f.gender || !f.tempat_lahir || !f.tgl_lahir || !f.alamat) {
     errorMessage.value = 'Lengkapi semua data wajib'
@@ -290,8 +340,8 @@ async function submitNewPatient() {
     <!-- Step: identitas -->
     <form v-if="flow.step === 'identity'" class="space-y-4 animate-rise" @submit.prevent="checkIdentity">
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
-      <AppInput v-model="flow.nik" label="NIK" inputmode="numeric" :maxlength="16" placeholder="16 digit sesuai KTP" />
-      <AppInput v-model="flow.phone" label="Nomor HP" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" />
+      <AppInput v-model="flow.nik" label="NIK" inputmode="numeric" :maxlength="16" placeholder="16 digit sesuai KTP" required />
+      <AppInput v-model="flow.phone" label="Nomor HP" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" required />
       <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Lanjutkan</AppButton>
       <p class="text-center text-sm text-neutral-500">
         Sudah punya akun? <NuxtLink to="/login" class="font-semibold text-primary-600">Masuk</NuxtLink>
@@ -310,7 +360,7 @@ async function submitNewPatient() {
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
       <AppAlert v-else-if="infoMessage" variant="info">{{ infoMessage }}</AppAlert>
       <form class="space-y-4" @submit.prevent="verifyOtp">
-        <AppInput v-model="otpCode" label="Kode OTP" inputmode="numeric" :maxlength="6" placeholder="6 digit dari WhatsApp" />
+        <AppInput v-model="otpCode" label="Kode OTP" inputmode="numeric" :maxlength="6" placeholder="6 digit dari WhatsApp" required />
         <AppButton type="submit" class="w-full" :loading="loading">Verifikasi</AppButton>
       </form>
       <button
@@ -327,8 +377,8 @@ async function submitNewPatient() {
         <ShieldCheck class="size-4.5 shrink-0" /> Nomor WhatsApp terverifikasi. Buat kata sandi untuk akun Anda.
       </div>
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
-      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" />
-      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" />
+      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" required />
+      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required />
       <AppButton type="submit" class="w-full" :loading="loading">Aktifkan Akun</AppButton>
     </form>
 
@@ -389,30 +439,48 @@ async function submitNewPatient() {
         </span>
       </AppAlert>
 
-      <AppInput v-model="scan.form.name" label="Nama Lengkap" />
+      <div>
+        <span class="mb-1.5 block text-sm font-medium text-neutral-700">NIK<span class="text-danger"> *</span></span>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="flow.nik" :disabled="!nikEditable" inputmode="numeric" maxlength="16" placeholder="16 digit sesuai KTP"
+            class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] text-neutral-900 outline-none transition-colors focus:border-primary-500 disabled:bg-neutral-100 disabled:text-neutral-500"
+          >
+          <button
+            type="button"
+            class="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 text-neutral-500 active:scale-95"
+            :class="nikEditable ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-neutral-200'"
+            :aria-label="nikEditable ? 'Kunci NIK' : 'Ubah NIK'"
+            @click="nikEditable = !nikEditable"
+          >
+            <Pencil class="size-4" />
+          </button>
+        </div>
+        <p v-if="nikCheckLoading" class="mt-1.5 text-xs text-neutral-400">Memeriksa NIK...</p>
+        <p v-else-if="nikCheckMessage" class="mt-1.5 text-xs font-medium text-danger">{{ nikCheckMessage }}</p>
+      </div>
+
+      <AppInput v-model="scan.form.name" label="Nama Lengkap" placeholder="Sesuai KTP" required />
       <div class="grid grid-cols-2 gap-3">
         <label class="block">
-          <span class="mb-1.5 block text-sm font-medium text-neutral-700">Jenis Kelamin</span>
+          <span class="mb-1.5 block text-sm font-medium text-neutral-700">Jenis Kelamin<span class="text-danger"> *</span></span>
           <select v-model="scan.form.gender" class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] outline-none focus:border-primary-500">
             <option value="">Pilih</option>
             <option value="L">Laki-laki</option>
             <option value="P">Perempuan</option>
           </select>
         </label>
-        <AppInput v-model="scan.form.tgl_lahir" label="Tanggal Lahir" type="date" />
+        <AppInput v-model="scan.form.tgl_lahir" label="Tanggal Lahir" type="date" required />
       </div>
-      <AppInput v-model="scan.form.tempat_lahir" label="Tempat Lahir" />
-      <AppInput v-model="newPhone" label="Nomor HP Aktif" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" hint="Tidak perlu verifikasi OTP untuk pendaftaran pasien baru" />
-      <AppInput v-model="scan.form.alamat" label="Alamat (sesuai KTP)" />
-      <div class="grid grid-cols-2 gap-3">
-        <AppInput v-model="scan.form.kecamatan" label="Kecamatan" />
-        <AppInput v-model="scan.form.kel_desa" label="Kelurahan/Desa" />
-      </div>
+      <AppInput v-model="scan.form.tempat_lahir" label="Tempat Lahir" placeholder="Contoh: Sumenep" required />
+      <AppInput v-model="newPhone" label="Nomor HP Aktif" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" hint="Tidak perlu verifikasi OTP untuk pendaftaran pasien baru" required />
+      <AppInput v-model="scan.form.alamat" label="Alamat (sesuai KTP)" placeholder="Nama jalan, nomor rumah" required />
+      <WilayahPicker v-model:kecamatan="scan.form.kecamatan" v-model:kel-desa="scan.form.kel_desa" />
       <AppInput v-model="scan.form.rt_rw" label="RT/RW" placeholder="001/002" />
 
       <div class="border-t border-neutral-100 pt-4">
-        <AppInput v-model="newPassword" label="Buat Kata Sandi" type="password" placeholder="Minimal 8 karakter" class="mb-4" />
-        <AppInput v-model="newPasswordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" />
+        <AppInput v-model="newPassword" label="Buat Kata Sandi" type="password" placeholder="Minimal 8 karakter" class="mb-4" required />
+        <AppInput v-model="newPasswordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required />
       </div>
 
       <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Daftar Sekarang</AppButton>

@@ -1,8 +1,10 @@
-// Port dari FE_SiLAKES src/utils/nik.ts -- SENGAJA disamakan persis (termasuk
-// hard-check awalan provinsi "3"/Jawa Timur) supaya validasi NIK di SiLACARE
-// konsisten dengan SiLAKES. Backend (App\Services\PatientPortal\NikValidationService)
-// adalah port PHP dari logika yang sama -- tetap divalidasi ulang di server,
-// ini hanya untuk UX instan (auto-isi tanggal lahir/gender) di form.
+// Parsing NIK sisi klien -- HANYA untuk UX instan (auto-isi tanggal
+// lahir/gender di form), BUKAN validator otoritatif. Backend
+// (App\Services\PatientPortal\NikValidationService) tetap memvalidasi ulang
+// secara penuh (termasuk kode wilayah lewat data creasi/laravel-nusa, yang
+// tidak tersedia di klien) -- di sini SENGAJA tidak membatasi ke provinsi
+// tertentu (Jatim), karena CFD gratis & pendaftaran mandiri terbuka untuk
+// NIK dari seluruh Indonesia.
 
 export interface ParsedNik {
   valid: boolean
@@ -13,22 +15,21 @@ export interface ParsedNik {
 
 export function isLikelyRegisterNumber(value: string): boolean {
   const digits = (value || '').replace(/\D/g, '')
-  return digits.length > 0 && (digits[0] === '1' || digits[0] === '2')
+  // Nomor register SiLAKES persis 13 digit -- dicek pada panjang itu saja,
+  // BUKAN dari digit awal (provinsi Sumatra/Kepri juga berawalan 1/2 pada
+  // NIK 16 digit yang sah).
+  return digits.length === 13 && (digits[0] === '1' || digits[0] === '2')
 }
 
 export function parseNik(value: string): ParsedNik {
   const digits = (value || '').replace(/\D/g, '')
 
-  if (digits.length !== 16) {
-    return { valid: false, reason: 'NIK harus 16 digit' }
-  }
-
   if (isLikelyRegisterNumber(digits)) {
     return { valid: false, reason: 'Terdeteksi sebagai nomor register, bukan NIK' }
   }
 
-  if (digits[0] !== '3') {
-    return { valid: false, reason: 'Awalan kode wilayah NIK tidak dikenali (bukan awalan 3/Jawa Timur)' }
+  if (digits.length !== 16) {
+    return { valid: false, reason: 'NIK harus 16 digit' }
   }
 
   let day = parseInt(digits.slice(6, 8), 10)
@@ -55,6 +56,11 @@ export function parseNik(value: string): ParsedNik {
   const dateObj = new Date(`${tglLahir}T00:00:00`)
   if (dateObj.getFullYear() !== fullYear || dateObj.getMonth() + 1 !== month || dateObj.getDate() !== day) {
     return { valid: false, reason: 'Tanggal lahir hasil parsing NIK tidak valid' }
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10)
+  if (tglLahir > todayStr || fullYear < new Date().getFullYear() - 120) {
+    return { valid: false, reason: 'Tanggal lahir hasil parsing NIK tidak masuk akal' }
   }
 
   return { valid: true, tglLahir, gender }

@@ -9,6 +9,7 @@ withDefaults(defineProps<{
   maxlength?: number
   disabled?: boolean
   inputmode?: 'text' | 'numeric' | 'tel' | 'email'
+  required?: boolean
 }>(), {
   type: 'text',
 })
@@ -18,7 +19,9 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
 
 <template>
   <label class="block">
-    <span v-if="label" class="mb-1.5 block text-sm font-medium text-neutral-700">{{ label }}</span>
+    <span v-if="label" class="mb-1.5 block text-sm font-medium text-neutral-700">
+      {{ label }}<span v-if="required" class="text-danger"> *</span>
+    </span>
     <input
       :value="modelValue"
       :type="type"

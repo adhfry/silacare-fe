@@ -87,7 +87,7 @@ async function submitRegister() {
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
       <AppInput
         v-model="nik" label="NIK (sesuai KTP)" inputmode="numeric" :maxlength="16"
-        placeholder="16 digit angka"
+        placeholder="16 digit angka" required
       />
       <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Cek Sekarang</AppButton>
     </form>

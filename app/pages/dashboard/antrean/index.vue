@@ -147,7 +147,7 @@ onMounted(() => {
         </div>
 
         <template v-else>
-          <AppInput v-model="tanggal" label="Tanggal Kedatangan" type="date" class="mb-4" />
+          <AppInput v-model="tanggal" label="Tanggal Kedatangan" type="date" class="mb-4" required />
 
           <p class="mb-2 text-sm font-medium text-neutral-700">Pilih Layanan</p>
           <div class="max-h-72 space-y-3 overflow-y-auto pr-1">
