@@ -6,10 +6,16 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 interface QueueItem {
   id: number
   tanggal: string | null
+  jam_kedatangan: string | null
   antrian_ke: number | null
   status: string
   pembayaran: { total_biaya: string | null; status: string }
 }
+
+// Labkesda buka 08.00-20.30, tapi booking online dibatasi sampai jam 20.00
+// (di atas itu petugas mulai persiapan tutup, tidak menerima pasien online).
+const JAM_BUKA_ONLINE = '08:00'
+const JAM_TUTUP_ONLINE = '20:00'
 
 interface Layanan {
   id: number
@@ -31,6 +37,7 @@ const layananList = ref<Layanan[]>([])
 const layananLoading = ref(false)
 const selectedLayanan = ref<number[]>([])
 const tanggal = ref('')
+const jam = ref('')
 const submitting = ref(false)
 const formError = ref('')
 const successMessage = ref('')
@@ -104,13 +111,27 @@ async function submitBooking() {
     formError.value = 'Pilih tanggal kedatangan'
     return
   }
+  if (!jam.value) {
+    formError.value = 'Pilih jam kedatangan'
+    return
+  }
+  if (jam.value < JAM_BUKA_ONLINE || jam.value > JAM_TUTUP_ONLINE) {
+    formError.value = `Jam kedatangan harus antara ${JAM_BUKA_ONLINE} - ${JAM_TUTUP_ONLINE}`
+    return
+  }
+  const isToday = tanggal.value === new Date().toISOString().slice(0, 10)
+  if (isToday && jam.value < new Date().toTimeString().slice(0, 5)) {
+    formError.value = 'Jam kedatangan yang dipilih sudah lewat, silakan pilih jam lain'
+    return
+  }
 
   submitting.value = true
   try {
-    await api.post('/patient-portal/queues', { layanan_ids: selectedLayanan.value, tanggal: tanggal.value })
+    await api.post('/patient-portal/queues', { layanan_ids: selectedLayanan.value, tanggal: tanggal.value, jam: jam.value })
     successMessage.value = 'Booking berhasil! Silakan datang sesuai jadwal dan bawa uang tunai sesuai total biaya.'
     selectedLayanan.value = []
     tanggal.value = ''
+    jam.value = ''
     showForm.value = false
     await router.replace('/dashboard/antrean')
     await loadQueues()
@@ -161,7 +182,19 @@ onMounted(() => {
         </div>
 
         <template v-else>
-          <AppInput v-model="tanggal" label="Tanggal Kedatangan" type="date" class="mb-4" required />
+          <div class="mb-4 grid grid-cols-2 gap-3">
+            <AppInput v-model="tanggal" label="Tanggal Kedatangan" type="date" required />
+            <label class="block">
+              <span class="mb-1.5 block text-sm font-medium text-neutral-700">Jam Kedatangan<span class="text-danger"> *</span></span>
+              <input
+                v-model="jam" type="time" :min="JAM_BUKA_ONLINE" :max="JAM_TUTUP_ONLINE"
+                class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] text-neutral-900 outline-none focus:border-primary-500"
+              >
+            </label>
+          </div>
+          <p class="-mt-2.5 mb-4 text-xs text-neutral-400">
+            Labkesda menerima pasien online pukul {{ JAM_BUKA_ONLINE }}-{{ JAM_TUTUP_ONLINE }} WIB.
+          </p>
 
           <p class="mb-2 text-sm font-medium text-neutral-700">Pilih Layanan</p>
 
@@ -239,7 +272,9 @@ onMounted(() => {
           <div v-for="q in queues" :key="q.id" class="rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
             <div class="flex items-start justify-between">
               <div>
-                <p class="text-sm font-semibold text-neutral-800">{{ formatDate(q.tanggal) }}</p>
+                <p class="text-sm font-semibold text-neutral-800">
+                  {{ formatDate(q.tanggal) }}<span v-if="q.jam_kedatangan"> · {{ q.jam_kedatangan }} WIB</span>
+                </p>
                 <p class="text-xs text-neutral-400">Nomor antrean: {{ q.antrian_ke ?? '-' }}</p>
               </div>
               <span
