@@ -2,7 +2,7 @@
 import { ShieldCheck, Camera, ImageUp, RotateCcw, AlertTriangle, PartyPopper, Pencil } from 'lucide-vue-next'
 import { parseNik } from '~/utils/nik'
 
-definePageMeta({ layout: 'guest' })
+definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
 const api = useApi()
 const auth = useAuthStore()

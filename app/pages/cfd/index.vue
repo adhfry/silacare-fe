@@ -8,6 +8,9 @@ const router = useRouter()
 const flow = useCfdFlow()
 const auth = useAuthStore()
 
+// Pasien yang sudah login "beranda"-nya adalah dashboard, bukan landing.
+const berandaLink = computed(() => (auth.isLoggedIn ? '/dashboard' : '/'))
+
 type Step = 'nik' | 'konfirmasi' | 'pilih' | 'sukses' | 'tidak_layak'
 const step = ref<Step>('nik')
 const loading = ref(false)
@@ -192,7 +195,7 @@ async function submitRegister() {
         <p class="text-xs text-neutral-400">Pendaftaran dibuka dalam</p>
         <p class="font-heading mt-1 text-2xl font-bold tabular-nums text-secondary-600">{{ countdown }}</p>
       </div>
-      <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
+      <NuxtLink :to="berandaLink" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
 
     <!-- Step: konfirmasi (pasien sudah login, identitas sudah pasti) -->
@@ -295,7 +298,7 @@ async function submitRegister() {
         </p>
       </div>
 
-      <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
+      <NuxtLink :to="berandaLink" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
 
     <!-- Step: tidak layak -->
@@ -307,7 +310,7 @@ async function submitRegister() {
           (jeda minimal 4 minggu antar pemeriksaan yang sama).
         </span>
       </AppAlert>
-      <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
+      <NuxtLink :to="berandaLink" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
   </div>
 </template>

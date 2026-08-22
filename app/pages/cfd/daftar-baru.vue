@@ -8,6 +8,10 @@ definePageMeta({ layout: 'guest' })
 const api = useApi()
 const router = useRouter()
 const flow = useCfdFlow()
+const auth = useAuthStore()
+
+// Pasien yang sudah login "beranda"-nya adalah dashboard, bukan landing.
+const berandaLink = computed(() => (auth.isLoggedIn ? '/dashboard' : '/'))
 
 // Kalau halaman ini diakses langsung tanpa lewat /cfd (nik belum ada di state),
 // kembalikan ke awal alur -- endpoint register-new tetap re-validasi NIK
@@ -368,7 +372,7 @@ async function submitRegisterNew() {
         </p>
       </div>
 
-      <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
+      <NuxtLink :to="berandaLink" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
   </div>
 </template>

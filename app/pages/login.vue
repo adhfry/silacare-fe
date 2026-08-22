@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'guest' })
+definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
 const api = useApi()
 const auth = useAuthStore()

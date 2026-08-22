@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { FileText, CalendarClock, HeartPulse, ArrowRight, UserPlus } from 'lucide-vue-next'
 
-definePageMeta({ layout: 'guest' })
+definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
 const features = [
   { icon: FileText, text: 'Lihat riwayat & hasil pemeriksaan lab kapan saja' },

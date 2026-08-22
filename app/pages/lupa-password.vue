@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { KeyRound } from 'lucide-vue-next'
 
-definePageMeta({ layout: 'guest' })
+definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
 const api = useApi()
 const auth = useAuthStore()
