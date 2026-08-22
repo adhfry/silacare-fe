@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, CalendarClock, X } from 'lucide-vue-next'
+import { Plus, CalendarClock, X, Search } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -35,9 +35,23 @@ const submitting = ref(false)
 const formError = ref('')
 const successMessage = ref('')
 
+const layananSearch = ref('')
+const activeCategory = ref<string | 'Semua'>('Semua')
+
+const categories = computed(() => ['Semua', ...new Set(layananList.value.map((l) => l.category))])
+
+const filteredLayanan = computed(() => {
+  const q = layananSearch.value.trim().toLowerCase()
+  return layananList.value.filter((l) => {
+    const matchesCategory = activeCategory.value === 'Semua' || l.category === activeCategory.value
+    const matchesSearch = !q || l.name.toLowerCase().includes(q)
+    return matchesCategory && matchesSearch
+  })
+})
+
 const grouped = computed(() => {
   const map = new Map<string, Layanan[]>()
-  for (const l of layananList.value) {
+  for (const l of filteredLayanan.value) {
     if (!map.has(l.category)) map.set(l.category, [])
     map.get(l.category)!.push(l)
   }
@@ -150,7 +164,30 @@ onMounted(() => {
           <AppInput v-model="tanggal" label="Tanggal Kedatangan" type="date" class="mb-4" required />
 
           <p class="mb-2 text-sm font-medium text-neutral-700">Pilih Layanan</p>
+
+          <div class="relative mb-2.5">
+            <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              v-model="layananSearch" type="text" placeholder="Cari nama layanan..."
+              class="w-full rounded-xl border-2 border-neutral-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary-500"
+            >
+          </div>
+
+          <div class="mb-3 flex gap-2 overflow-x-auto pb-1">
+            <button
+              v-for="cat in categories" :key="cat" type="button"
+              class="shrink-0 rounded-full border-2 px-3 py-1.5 text-xs font-semibold whitespace-nowrap"
+              :class="activeCategory === cat ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-500'"
+              @click="activeCategory = cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
+
           <div class="max-h-72 space-y-3 overflow-y-auto pr-1">
+            <p v-if="!grouped.size" class="py-6 text-center text-sm text-neutral-400">
+              Layanan tidak ditemukan.
+            </p>
             <div v-for="[category, list] in grouped" :key="category">
               <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">{{ category }}</p>
               <label
