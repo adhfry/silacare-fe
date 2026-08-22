@@ -5,7 +5,7 @@
  * dua arah: cari kecamatan dulu lalu pilih desanya, ATAU langsung cari nama
  * kelurahan/desa (kecamatan otomatis terisi dari hasilnya). Kalau nama yang
  * diketik tidak ketemu di data wilayah, tetap boleh dipakai sebagai teks
- * bebas -- field ini di database memang string biasa, bukan FK, supaya
+ * bebas, field ini di database memang string biasa, bukan FK, supaya
  * pasien dari desa yang belum lengkap datanya di wilayah tetap bisa daftar.
  */
 const kecamatan = defineModel<string>('kecamatan', { default: '' })
@@ -38,7 +38,7 @@ watch(kelDesa, (val) => { if (val !== villageQuery.value) villageQuery.value = v
 interface ResolveResult { code: string; name: string; district_code?: string; district_name?: string; confidence: number }
 
 // Data pasien lama sering berisi variasi penulisan ("Kec. Kota Sumenep",
-// "Kecamatan Kota Sumenep", dst.) -- begitu komponen ini dibuka dengan nilai
+// "Kecamatan Kota Sumenep", dst.), begitu komponen ini dibuka dengan nilai
 // awal (edit data existing), cocokkan ke entri wilayah resmi lewat resolver
 // similarity, supaya langsung "ketemu" (dan selectedDistrictCode terisi,
 // supaya pencarian kelurahan/desa berikutnya ikut ter-scope dengan benar)
@@ -53,7 +53,7 @@ onMounted(async () => {
         selectedDistrictCode.value = hit.code
       }
     } catch {
-      // Resolver gagal (jaringan, dsb.) -- biarkan nilai asli apa adanya,
+      // Resolver gagal (jaringan, dsb.), biarkan nilai asli apa adanya,
       // tetap bisa diedit manual seperti biasa.
     }
   }
@@ -73,7 +73,7 @@ onMounted(async () => {
         }
       }
     } catch {
-      // sama seperti di atas -- biarkan apa adanya kalau gagal.
+      // sama seperti di atas, biarkan apa adanya kalau gagal.
     }
   }
 })
@@ -122,14 +122,14 @@ function onVillageInput() {
     villageLoading.value = true
     try {
       if (selectedDistrictCode.value) {
-        // Kecamatan sudah dipilih -- ambil daftar desa DI KECAMATAN itu saja,
+        // Kecamatan sudah dipilih, ambil daftar desa DI KECAMATAN itu saja,
         // difilter oleh nama yang diketik di sisi klien (daftar per kecamatan
         // biasanya kecil, tidak perlu endpoint search terpisah).
         const all = await api.get<VillageHit[]>(`/patient-portal/wilayah/villages?district_code=${selectedDistrictCode.value}`)
         const q = villageQuery.value.trim().toLowerCase()
         villageHits.value = all.filter((v) => v.name.toLowerCase().includes(q))
       } else {
-        // Belum pilih kecamatan -- cari nama desa lintas kecamatan/kabupaten.
+        // Belum pilih kecamatan, cari nama desa lintas kecamatan/kabupaten.
         villageHits.value = await api.get<VillageHit[]>(`/patient-portal/wilayah/villages/search?q=${encodeURIComponent(villageQuery.value.trim())}`)
       }
     } catch {
@@ -144,7 +144,7 @@ function pickVillage(hit: VillageHit) {
   villageQuery.value = hit.name
   kelDesa.value = hit.name
   villageOpen.value = false
-  // Kelurahan/desa dipilih langsung (tanpa pilih kecamatan dulu) -- kecamatan
+  // Kelurahan/desa dipilih langsung (tanpa pilih kecamatan dulu), kecamatan
   // ikut terisi otomatis dari hasilnya.
   if (hit.district_name) {
     districtQuery.value = hit.district_name

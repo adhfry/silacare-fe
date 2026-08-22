@@ -1,5 +1,5 @@
 /**
- * Poll status antrean CFD live -- dipakai di layar sukses daftar & detail
+ * Poll status antrean CFD live, dipakai di layar sukses daftar & detail
  * riwayat, supaya pasien bisa memantau sisa berapa orang lagi di depannya
  * tanpa refresh manual. Polling sederhana (bukan Firebase/websocket) --
  * cukup untuk kebutuhan "live-ish" antrean, jauh lebih sederhana untuk

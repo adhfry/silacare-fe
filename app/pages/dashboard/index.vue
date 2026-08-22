@@ -33,7 +33,7 @@ onMounted(async () => {
   try {
     cfdStatus.value = await api.get<CfdStatus>('/patient-portal/cfd-status')
   } catch {
-    // Kartu CFD bersifat informatif, bukan alur inti dashboard -- gagal ambil
+    // Kartu CFD bersifat informatif, bukan alur inti dashboard, gagal ambil
     // status cukup disembunyikan (kartu tidak dirender), jangan mengganggu
     // sisa dashboard dengan pesan error.
   } finally {
@@ -53,7 +53,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-// CFD cuma berlangsung hari Minggu -- "tersedia" dari backend cuma berarti
+// CFD cuma berlangsung hari Minggu, "tersedia" dari backend cuma berarti
 // jeda 28 hari sudah lewat, BUKAN berarti bisa periksa hari ini juga kalau
 // hari ini bukan Minggu. Baris ini cari tanggal Minggu berikutnya (atau hari
 // ini kalau kebetulan hari ini Minggu) dari sebuah tanggal acuan.
@@ -69,7 +69,7 @@ function formatMinggu(date: Date) {
   return `Minggu, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
 }
 
-// Prefix teks status kategori -- BUKAN dipisah dari tanggalnya, supaya
+// Prefix teks status kategori, BUKAN dipisah dari tanggalnya, supaya
 // tanggal pada kasus limit 28 hari ASLI (alasan 'interval_28_hari') bisa
 // ditebalkan + digarisbawahi secara terpisah dari kasus "sudah CFD hari ini"
 // (yang teksnya beda & tanggalnya cukup semibold saja, bukan underline --
@@ -204,7 +204,7 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
         </div>
 
         <p class="flex items-start gap-1.5 text-xs text-neutral-400">
-          <span>Setiap kunjungan CFD otomatis termasuk cek GDA/GDP & tensi -- Anda cuma perlu pilih Asam Urat atau Kolesterol.</span>
+          <span>Setiap kunjungan CFD otomatis termasuk cek GDA/GDP & tensi. Anda cuma perlu pilih Asam Urat atau Kolesterol.</span>
           <tippy content="GDA/GDP (gula darah) dan tensi (tekanan darah) selalu ikut diperiksa gratis setiap kunjungan CFD, tanpa perlu dipilih. Yang Anda pilih di sini hanya pemeriksaan tambahannya: Asam Urat atau Kolesterol (pilih salah satu per kunjungan)." trigger="mouseenter click" theme="light">
             <CircleHelp class="size-3.5 shrink-0 cursor-pointer text-primary-500" />
           </tippy>

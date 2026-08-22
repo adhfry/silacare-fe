@@ -1,7 +1,7 @@
 /**
  * Wrapper tipis di atas $fetch untuk memanggil api/patient-portal/* &
  * api/cfd/* SiLAKES. Envelope response backend selalu {status, data, message}
- * (lihat app/Helpers/ResponseHelper.php di backend) -- ApiError di bawah
+ * (lihat app/Helpers/ResponseHelper.php di backend), ApiError di bawah
  * membawa pesan yang sudah pantas ditampilkan langsung ke pasien (Bahasa
  * Indonesia, dari backend), tidak perlu diterjemahkan lagi di sini.
  */

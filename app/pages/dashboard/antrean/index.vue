@@ -71,7 +71,7 @@ const queues = ref<QueueItem[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
 
-// Umur pasien -- dipakai aturan nilai rujukan berbasis usia untuk preview
+// Umur pasien, dipakai aturan nilai rujukan berbasis usia untuk preview
 // hasil CFD, sama seperti perhitungan di riwayat/[id].vue.
 const patientAge = computed<number | null>(() => {
   const tglLahir = auth.profile?.patient.tgl_lahir
@@ -92,7 +92,7 @@ function isAbnormal(item: CfdHasilItem): boolean {
   })
 }
 
-// Antrean CFD hidup (belum diperiksa -- status masih pending, belum ada hasil
+// Antrean CFD hidup (belum diperiksa, status masih pending, belum ada hasil
 // sama sekali) dapat countdown "sisa di depan" realtime. Begitu hasil sudah
 // diinput semua (cfd_hasil_ready), posisi antrean tidak relevan lagi --
 // preview hasil yang ditampilkan sebagai gantinya.
@@ -102,7 +102,7 @@ const activeCfdItem = computed(() =>
 const activeCfdId = computed(() => activeCfdItem.value?.id ?? null)
 const { status: cfdQueueStatus, start: startCfdQueuePolling, stop: stopCfdQueuePolling } = useCfdQueueStatus(activeCfdId)
 
-// Halaman ini "realtime" selama masih dibuka -- poll ulang seluruh daftar
+// Halaman ini "realtime" selama masih dibuka, poll ulang seluruh daftar
 // tiap beberapa detik selama ada antrean CFD yang masih berjalan (baik masih
 // menunggu giliran ATAU sudah tapi hasilnya belum lengkap semua), supaya
 // hasil yang baru selesai diinput petugas langsung muncul tanpa reload.
@@ -143,7 +143,7 @@ const reviseCategories = computed(() => ['Semua', ...new Set(layananList.value.m
 
 // Layanan yang SUDAH dipilih ditaruh di bagian atas sendiri (biar checkbox-nya
 // langsung kelihatan untuk di-uncheck), sisanya baru dikelompokkan per kategori
-// di bawahnya seperti biasa -- dan dua-duanya tetap ikut filter cari/kategori.
+// di bawahnya seperti biasa, dan dua-duanya tetap ikut filter cari/kategori.
 const reviseFilteredLayanan = computed(() => {
   const q = reviseSearch.value.trim().toLowerCase()
   return layananList.value.filter((l) => {
@@ -184,7 +184,7 @@ const reviseDiff = computed(() => {
   return { add, remove }
 })
 
-// Fallback kalau petugas tidak bisa scan QR pasien -- pasien sendiri yang
+// Fallback kalau petugas tidak bisa scan QR pasien, pasien sendiri yang
 // memindai QR (rotasi 15 detik) yang ditampilkan di layar admin. Backend
 // menentukan sendiri janji mana yang di-check-in (janji hari ini yang
 // berlaku, lihat PatientCheckinService::findCheckinTarget()), jadi tidak
@@ -206,7 +206,7 @@ async function onQrDetected(code: string) {
   }
 }
 
-// Follow up "saya sudah tiba" -- notice tambahan ke SELURUH petugas (sfx +
+// Follow up "saya sudah tiba", notice tambahan ke SELURUH petugas (sfx +
 // toast di SiLAKES), BUKAN pengganti QR check-in. Cooldown 5 menit dicek
 // server-side (PatientFollowUpService), di sini cuma menghitung mundur
 // tampilannya dari follow_up_next_at yang dikirim backend.
@@ -278,12 +278,12 @@ const totalBiaya = computed(() =>
     .reduce((sum, l) => sum + Number(l.price), 0),
 )
 
-// Pasien cuma boleh punya satu janji AKTIF (belum selesai) per hari -- kalau
+// Pasien cuma boleh punya satu janji AKTIF (belum selesai) per hari, kalau
 // hari ini masih ada surat dengan status 'pending', tolak buat janji baru
 // dan arahkan untuk menyelesaikan yang sudah ada dulu.
 const activeTodayQueue = computed(() => {
   const todayStr = new Date().toISOString().slice(0, 10)
-  // Janji yang sudah dibatalkan/ditolak TIDAK dianggap aktif -- status
+  // Janji yang sudah dibatalkan/ditolak TIDAK dianggap aktif, status
   // backend sengaja tetap 'pending' saat dibatalkan/ditolak (dibatalkan_at/
   // ditolak_at dipakai sebagai penanda terpisah), jadi harus dicek eksplisit
   // di sini juga, bukan hanya status !== 'completed'.
@@ -307,7 +307,7 @@ async function refreshQueuesQuietly() {
   try {
     queues.value = await api.get('/patient-portal/queues')
   } catch {
-    // polling silent-fail -- jangan ganggu pasien dengan error tiap beberapa detik.
+    // polling silent-fail, jangan ganggu pasien dengan error tiap beberapa detik.
   }
 }
 
@@ -315,7 +315,7 @@ async function loadQuota() {
   try {
     quota.value = await api.get('/patient-portal/queues/quota')
   } catch {
-    // Kuota gagal dimuat bukan penghalang -- validasi tetap dijaga di backend
+    // Kuota gagal dimuat bukan penghalang, validasi tetap dijaga di backend
     // saat submit, tombol "Buat Janji Baru" tetap bisa dicoba.
   }
 }
@@ -765,8 +765,8 @@ onBeforeUnmount(() => {
               <p class="mt-1 text-xs text-secondary-600">orang, diperbarui otomatis</p>
             </div>
 
-            <!-- Hasil CFD -- nilai mentah begitu SEMUA parameter sudah diinput
-                 petugas di lokasi (belum tentu sudah resmi disetujui -- itu
+            <!-- Hasil CFD, nilai mentah begitu SEMUA parameter sudah diinput
+                 petugas di lokasi (belum tentu sudah resmi disetujui, itu
                  baru muncul di Riwayat setelah status_konfirmasi approved).
                  Merah kalau di luar nilai rujukan, sama seperti Riwayat. -->
             <div v-if="q.is_kunjungan_cfd && q.cfd_hasil_ready && q.cfd_hasil" class="mt-3 rounded-xl border-t border-neutral-100 bg-neutral-50 p-4 pt-4">
@@ -786,14 +786,14 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Sudah check-in (via QR pribadi discan petugas ATAU fallback
-                 QR admin discan sendiri) -- tidak perlu tampilkan QR lagi. -->
+                 QR admin discan sendiri), tidak perlu tampilkan QR lagi. -->
             <div v-if="q.sudah_diverifikasi" class="mt-3 flex items-center gap-2.5 rounded-xl border-t border-neutral-100 bg-secondary-50 p-4 pt-4">
               <CheckCircle2 class="size-4.5 shrink-0 text-secondary-600" />
               <p class="text-xs font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
             </div>
 
             <!-- QR check-in: tunjukkan ke petugas di loket pendaftaran saat
-                 datang -- petugas scan, seluruh layanan yang dipesan otomatis
+                 datang, petugas scan, seluruh layanan yang dipesan otomatis
                  terisi. Blur+Expired kalau sudah tidak berlaku (hasil sudah
                  diproses atau janji dibatalkan). -->
             <div v-else-if="q.qr_image" class="mt-3 rounded-xl border-t border-neutral-100 bg-neutral-50 p-4 pt-4 text-center">
@@ -830,7 +830,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- Follow up "saya sudah tiba" -- notice tambahan ke petugas (bunyi
+            <!-- Follow up "saya sudah tiba", notice tambahan ke petugas (bunyi
                  + toast di SiLAKES), BUKAN pengganti QR check-in (blok terpisah
                  dari QR di atas, keduanya SAMA-SAMA tampil sekaligus, bukan
                  alternatif satu sama lain). Cooldown 5 menit ditampilkan
@@ -892,7 +892,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="max-h-60 space-y-3 overflow-y-auto pr-1">
-                  <!-- Layanan yang sudah dipilih ditaruh paling atas -- checkbox
+                  <!-- Layanan yang sudah dipilih ditaruh paling atas, checkbox
                        langsung kelihatan untuk di-uncheck, tidak perlu dicari lagi. -->
                   <div v-if="reviseSelectedItems.length">
                     <p class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary-600">Dipilih ({{ reviseSelectedItems.length }})</p>

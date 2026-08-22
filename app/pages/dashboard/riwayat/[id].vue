@@ -71,7 +71,7 @@ async function onQrDetected(code: string) {
   }
 }
 
-// Follow up "saya sudah tiba" -- notice tambahan ke petugas, BUKAN pengganti
+// Follow up "saya sudah tiba", notice tambahan ke petugas, BUKAN pengganti
 // QR check-in. Sama seperti halaman Antrean.
 const followUpCountdownText = ref('')
 const followUpSubmitting = ref(false)
@@ -137,7 +137,7 @@ function formatRupiah(value: number) {
   return value.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })
 }
 
-// Umur pasien -- dipakai aturan nilai rujukan berbasis usia (mis. "th:<=12:...").
+// Umur pasien, dipakai aturan nilai rujukan berbasis usia (mis. "th:<=12:...").
 // Perhitungan sama seperti umur() di FE_SiLAKES, supaya hasil konsisten.
 const patientAge = computed<number | null>(() => {
   const tglLahir = auth.profile?.patient.tgl_lahir
@@ -284,7 +284,7 @@ function isAbnormal(item: ResultItem): boolean {
           </div>
         </div>
 
-        <!-- Follow up "saya sudah tiba" -- blok terpisah dari QR di atas,
+        <!-- Follow up "saya sudah tiba", blok terpisah dari QR di atas,
              keduanya SAMA-SAMA tampil sekaligus, bukan alternatif satu sama
              lain. -->
         <div v-if="detail.can_follow_up" class="mt-3">
@@ -317,7 +317,7 @@ function isAbnormal(item: ResultItem): boolean {
           <p class="mt-1 text-sm text-neutral-700">{{ detail.kesimpulan }}</p>
         </div>
 
-        <!-- Layanan yang dipesan -- tetap ditampilkan walau hasil belum keluar,
+        <!-- Layanan yang dipesan, tetap ditampilkan walau hasil belum keluar,
              supaya pasien tahu kelengkapan pemeriksaan yang sedang diproses. -->
         <p class="mt-5 mb-2 text-sm font-medium text-neutral-700">Layanan</p>
         <div class="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">

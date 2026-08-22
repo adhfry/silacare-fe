@@ -1,4 +1,4 @@
-// Port dari FE_SiLAKES src/services/ktpOcr.ts -- SENGAJA memakai model, prompt,
+// Port dari FE_SiLAKES src/services/ktpOcr.ts, SENGAJA memakai model, prompt,
 // dan key JSON yang SAMA PERSIS (nik/nama/tempat_lahir/tanggal_lahir/
 // jenis_kelamin/alamat/rt_rw/kel_desa/kecamatan/agama/status_perkawinan/
 // pekerjaan) per instruksi eksplisit user, supaya perilaku OCR KTP konsisten

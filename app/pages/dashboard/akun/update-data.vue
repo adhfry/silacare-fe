@@ -58,7 +58,7 @@ async function loadHistory() {
   try {
     history.value = await api.get('/patient-portal/profile/update-requests')
   } catch {
-    // Riwayat gagal dimuat bukan penghalang -- form pengajuan tetap bisa
+    // Riwayat gagal dimuat bukan penghalang, form pengajuan tetap bisa
     // dicoba, validasi "masih ada yang pending" tetap dijaga di backend.
   } finally {
     historyLoading.value = false
@@ -89,7 +89,7 @@ const form = reactive({
   jenis_perokok: patient?.jenis_perokok || '',
 })
 
-// Snapshot nilai AWAL (bukan reactive) -- dipakai untuk hitung field mana
+// Snapshot nilai AWAL (bukan reactive), dipakai untuk hitung field mana
 // saja yang benar-benar diubah user, supaya cuma itu yang diajukan.
 const original = { ...form }
 
@@ -102,7 +102,7 @@ const changedFields = computed(() => {
   for (const key of Object.keys(form) as (keyof typeof form)[]) {
     if (form[key] !== original[key as keyof typeof original]) {
       // is_bpjs/is_perokok di form pakai 'ya'/'tidak' untuk UI toggle,
-      // tapi field aslinya boolean -- konversi balik saat dikirim.
+      // tapi field aslinya boolean, konversi balik saat dikirim.
       if (key === 'is_bpjs' || key === 'is_perokok') {
         changes[key] = form[key] === 'ya' ? '1' : ''
       } else {
@@ -156,7 +156,7 @@ async function submit() {
       <AppAlert v-if="successMessage" variant="success" class="mb-4">{{ successMessage }}</AppAlert>
       <AppAlert v-if="errorMessage" variant="error" class="mb-4">{{ errorMessage }}</AppAlert>
 
-      <!-- Pengajuan yang masih menunggu persetujuan -- form disembunyikan
+      <!-- Pengajuan yang masih menunggu persetujuan, form disembunyikan
            selama ini masih ada, sesuai kebijakan "satu pengajuan, tunggu
            persetujuan dulu sebelum bisa mengajukan lagi". -->
       <div v-if="pendingBatch" class="mb-4 rounded-2xl border-2 border-amber-200 bg-amber-50 p-4">

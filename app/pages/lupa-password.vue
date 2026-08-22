@@ -19,7 +19,7 @@ const { state: flow, clear: clearFlow } = usePersistedFlow('lupa-password', {
   nik: '',
   phone: '',
   resetToken: '',
-  // Timestamp absolut, bukan detik hitung-mundur -- pola sama seperti
+  // Timestamp absolut, bukan detik hitung-mundur, pola sama seperti
   // /daftar (lihat catatan di sana), supaya jeda kirim-ulang OTP tetap
   // akurat walau halaman ditinggal/di-refresh.
   otpCooldownUntil: null as string | null,

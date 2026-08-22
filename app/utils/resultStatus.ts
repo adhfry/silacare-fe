@@ -1,10 +1,10 @@
 /**
  * Port dari checkResultStatus() di FE_SiLAKES
- * (src/components/users/sid/public/HasilDigital.vue) -- SAMA PERSIS logikanya
+ * (src/components/users/sid/public/HasilDigital.vue), SAMA PERSIS logikanya
  * (aturan rentang usia "th:", aturan gender "L:"/"P:", multi-aturan dipisah
  * "|", operator <, <=, >, >=, rentang "a-b") supaya definisi "abnormal" di
  * SiLACARE konsisten dengan yang staf lihat di SiLAKES. Hanya boolean
- * abnormal yang dipakai di sini (tanpa label/deskripsi kondisi) -- SiLACARE
+ * abnormal yang dipakai di sini (tanpa label/deskripsi kondisi), SiLACARE
  * cukup menandai merah, tidak menjelaskan alasannya.
  */
 export interface ResultStatusPatient {

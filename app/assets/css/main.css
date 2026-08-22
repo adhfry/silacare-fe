@@ -51,7 +51,7 @@
   --color-accent-900: #164a47;
   --color-accent-950: #072b2a;
 
-  /* Netral -- sedikit condong biru dingin (bukan abu-abu murni) supaya harmonis
+  /* Netral, sedikit condong biru dingin (bukan abu-abu murni) supaya harmonis
      dengan primary, dipakai untuk teks & background alih-alih slate/gray generik. */
   --color-neutral-50: #f6f8fa;
   --color-neutral-100: #eceff3;
@@ -82,7 +82,7 @@
 }
 
 @layer utilities {
-  /* Gradasi khas logo -- dipakai terbatas untuk elemen hero/CTA utama saja,
+  /* Gradasi khas logo, dipakai terbatas untuk elemen hero/CTA utama saja,
      supaya tidak berlebihan dipakai di seluruh UI. */
   .bg-brand-gradient {
     background-image: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-accent-500) 55%, var(--color-secondary-500) 100%);
@@ -96,7 +96,7 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  /* Entrance halus untuk kartu/elemen -- dipakai lewat class .animate-rise,
+  /* Entrance halus untuk kartu/elemen, dipakai lewat class .animate-rise,
      bukan animasi bawaan Tailwind supaya durasinya konsisten di seluruh app. */
   .animate-rise {
     animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;

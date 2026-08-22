@@ -19,7 +19,7 @@ const auth = useAuthStore()
 const berandaLink = computed(() => (auth.isLoggedIn ? '/dashboard' : '/'))
 
 // Kalau halaman ini diakses langsung tanpa lewat /cfd (nik belum ada di state),
-// kembalikan ke awal alur -- endpoint register-new tetap re-validasi NIK
+// kembalikan ke awal alur, endpoint register-new tetap re-validasi NIK
 // terlepas dari ini, ini murni supaya UX tidak membingungkan.
 if (!flow.value.nik) {
   await navigateTo('/cfd')
@@ -107,7 +107,7 @@ function retakePhoto() {
   step.value = 'foto'
 }
 
-// NIK terkunci secara default (hasil pindai KTP + step NIK sebelumnya) -- lihat
+// NIK terkunci secara default (hasil pindai KTP + step NIK sebelumnya), lihat
 // catatan yang sama di app/pages/daftar/index.vue untuk alasannya.
 const nikEditable = ref(false)
 const nikCheckLoading = ref(false)
@@ -122,7 +122,7 @@ async function checkNikExists() {
       ? 'NIK ini ternyata sudah terdaftar di SiLAKES. Kembali ke awal dan gunakan NIK tersebut langsung di halaman cek CFD.'
       : ''
   } catch {
-    // Bantuan UX saja -- backend tetap validasi ulang penuh saat submit.
+    // Bantuan UX saja, backend tetap validasi ulang penuh saat submit.
   } finally {
     nikCheckLoading.value = false
   }
@@ -138,7 +138,7 @@ watch(() => flow.value.nik, (val) => {
     if (parsed.gender) form.gender = parsed.gender
   }
   // Cek ke backend begitu sudah 16 digit, TERLEPAS dari parseNik valid atau
-  // tidak di klien -- backend adalah otoritas sesungguhnya, lihat
+  // tidak di klien, backend adalah otoritas sesungguhnya, lihat
   // checkNikExists().
   if (val.replace(/\D/g, '').length === 16) {
     nikCheckTimer = setTimeout(checkNikExists, 400)
@@ -177,7 +177,7 @@ async function submitRegisterNew() {
 
   submitting.value = true
   try {
-    // Wajib berada di lokasi CFD (radius 400m) -- dicek ulang di backend.
+    // Wajib berada di lokasi CFD (radius 400m), dicek ulang di backend.
     const { latitude, longitude } = await getCurrentPosition()
 
     const data = await api.post<any>('/cfd/register-new', {

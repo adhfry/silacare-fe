@@ -1,12 +1,12 @@
 /**
  * Simpan progres alur multi-langkah (aktivasi/daftar) ke localStorage supaya
- * tahan refresh -- skenario nyata: user isi NIK+HP, buka WhatsApp untuk lihat
+ * tahan refresh, skenario nyata: user isi NIK+HP, buka WhatsApp untuk lihat
  * kode OTP, balik ke tab/app ini (kadang ke-refresh oleh OS/browser), progres
  * TIDAK BOLEH hilang. Di-key per nama alur, bukan per device-id (localStorage
  * SUDAH per-browser/per-device secara alami, tidak perlu fingerprinting).
  *
  * SENGAJA TIDAK menyimpan foto KTP (base64 bisa besar, berisiko kena limit
- * localStorage ~5-10MB) -- kalau refresh terjadi tepat di langkah foto/form
+ * localStorage ~5-10MB), kalau refresh terjadi tepat di langkah foto/form
  * pasien baru, user diminta foto ulang saja, bukan seluruh NIK/HP dari awal.
  */
 export function usePersistedFlow<T extends Record<string, any>>(key: string, initial: T) {
@@ -18,7 +18,7 @@ export function usePersistedFlow<T extends Record<string, any>>(key: string, ini
       const saved = localStorage.getItem(storageKey)
       if (saved) Object.assign(state, JSON.parse(saved))
     } catch {
-      // Data korup/lama -- abaikan, mulai dari initial.
+      // Data korup/lama, abaikan, mulai dari initial.
     }
 
     watch(
@@ -27,7 +27,7 @@ export function usePersistedFlow<T extends Record<string, any>>(key: string, ini
         try {
           localStorage.setItem(storageKey, JSON.stringify(val))
         } catch {
-          // localStorage penuh/nonaktif (mode privat) -- progres cukup hilang
+          // localStorage penuh/nonaktif (mode privat), progres cukup hilang
           // saat refresh, tidak perlu menghentikan alur.
         }
       },

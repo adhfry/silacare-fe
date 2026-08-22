@@ -33,7 +33,7 @@ const suratHasilLabId = ref<number | null>(null)
 const { status: queueStatus, start: startQueuePolling } = useCfdQueueStatus(suratHasilLabId)
 
 // Jendela waktu pendaftaran CFD (Minggu 07.00+, lihat CfdRegistrationService
-// backend) -- dicek SEBELUM apa pun ditampilkan, supaya tidak ada yang
+// backend), dicek SEBELUM apa pun ditampilkan, supaya tidak ada yang
 // sempat isi form kalau memang belum waktunya sama sekali.
 const timingLoading = ref(true)
 const timingAllowed = ref(true)
@@ -71,7 +71,7 @@ async function checkTiming() {
     timingAllowed.value = data.allowed
     nextAvailableAt.value = data.next_available_at
   } catch {
-    // Kalau gagal cek, biarkan lanjut -- backend tetap jadi validator final
+    // Kalau gagal cek, biarkan lanjut, backend tetap jadi validator final
     // di endpoint register/register-new, jendela waktu tidak pernah dilewati
     // hanya karena pengecekan awal ini gagal (mis. jaringan).
     timingAllowed.value = true
@@ -80,7 +80,7 @@ async function checkTiming() {
   }
 }
 
-// Pasien yang sudah login TIDAK perlu isi ulang NIK -- identitasnya sudah
+// Pasien yang sudah login TIDAK perlu isi ulang NIK, identitasnya sudah
 // pasti dari akun yang sedang login (bukan input bebas), langsung ke
 // konfirmasi lalu pilih kategori.
 async function checkNikForLoggedInUser() {
@@ -148,7 +148,7 @@ async function submitRegister() {
 
   loading.value = true
   try {
-    // Wajib berada di lokasi CFD (radius 400m) -- dicek ulang di backend,
+    // Wajib berada di lokasi CFD (radius 400m), dicek ulang di backend,
     // ini cuma supaya penolakan izin/GPS mati langsung jelas di sini.
     const { latitude, longitude } = await getCurrentPosition()
 
@@ -319,7 +319,7 @@ async function submitRegister() {
         <span v-if="eligibility?.kuota.penuh">Kuota CFD hari ini sudah penuh, silakan datang di kesempatan berikutnya.</span>
         <span v-else-if="eligibility?.sudah_cfd_hari_ini">
           Anda sudah mengikuti pemeriksaan CFD hari ini. Satu kunjungan CFD hanya untuk satu pemeriksaan
-          (Asam Urat atau Kolesterol) -- silakan kembali hari Minggu berikutnya.
+          (Asam Urat atau Kolesterol), silakan kembali hari Minggu berikutnya.
         </span>
         <span v-else>
           Anda belum bisa mengikuti pemeriksaan asam urat maupun kolesterol saat ini

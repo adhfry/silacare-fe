@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Cari FKTP (Fasilitas Kesehatan Tingkat Pertama) dari daftar Puskesmas per
- * kecamatan Sumenep -- tidak ada daftar FKTP resmi lengkap (klinik swasta,
+ * kecamatan Sumenep, tidak ada daftar FKTP resmi lengkap (klinik swasta,
  * dokter keluarga, dst.) di sistem ini, jadi tetap boleh diisi teks bebas
  * kalau tidak ketemu di daftar (pola sama dengan WilayahPicker).
  */

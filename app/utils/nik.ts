@@ -1,8 +1,8 @@
-// Parsing NIK sisi klien -- HANYA untuk UX instan (auto-isi tanggal
+// Parsing NIK sisi klien, HANYA untuk UX instan (auto-isi tanggal
 // lahir/gender di form), BUKAN validator otoritatif. Backend
 // (App\Services\PatientPortal\NikValidationService) tetap memvalidasi ulang
 // secara penuh (termasuk kode wilayah lewat data creasi/laravel-nusa, yang
-// tidak tersedia di klien) -- di sini SENGAJA tidak membatasi ke provinsi
+// tidak tersedia di klien), di sini SENGAJA tidak membatasi ke provinsi
 // tertentu (Jatim), karena CFD gratis & pendaftaran mandiri terbuka untuk
 // NIK dari seluruh Indonesia.
 
@@ -15,7 +15,7 @@ export interface ParsedNik {
 
 export function isLikelyRegisterNumber(value: string): boolean {
   const digits = (value || '').replace(/\D/g, '')
-  // Nomor register SiLAKES persis 13 digit -- dicek pada panjang itu saja,
+  // Nomor register SiLAKES persis 13 digit, dicek pada panjang itu saja,
   // BUKAN dari digit awal (provinsi Sumatra/Kepri juga berawalan 1/2 pada
   // NIK 16 digit yang sah).
   return digits.length === 13 && (digits[0] === '1' || digits[0] === '2')

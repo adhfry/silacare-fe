@@ -21,7 +21,7 @@ const { state: flow, clear: clearFlow } = usePersistedFlow('daftar', {
   phone: '',
   activationToken: '',
   newPatientForm: null as null | Record<string, string>,
-  // Timestamp ABSOLUT (ISO string), bukan detik hitung-mundur -- supaya jeda
+  // Timestamp ABSOLUT (ISO string), bukan detik hitung-mundur, supaya jeda
   // kirim-ulang OTP tetap akurat walau user pindah halaman/app lalu balik lagi
   // (skenario nyata: isi NIK+HP, buka WhatsApp lihat kode, balik ke sini).
   // Backend yang menentukan nilainya (jeda progresif, lihat OtpAbuseGuard).
@@ -33,7 +33,7 @@ const errorMessage = ref('')
 const infoMessage = ref('')
 
 // Detik sisa dihitung ULANG setiap detik dari selisih terhadap otpCooldownUntil
-// yang tersimpan -- bukan disimpan sebagai angka mundur sendiri, jadi selalu
+// yang tersimpan, bukan disimpan sebagai angka mundur sendiri, jadi selalu
 // akurat berapa pun lama halaman ini tidak aktif.
 const nowTick = ref(Date.now())
 let tickTimer: ReturnType<typeof setInterval> | undefined
@@ -63,7 +63,7 @@ const displayPhone = computed(() => {
 })
 
 function changePhoneNumber() {
-  // Kembali ke step identitas untuk koreksi -- NIK dipertahankan (kemungkinan
+  // Kembali ke step identitas untuk koreksi, NIK dipertahankan (kemungkinan
   // besar sudah benar), hanya nomor HP yang salah ketik. Batalkan juga
   // cooldown yang sedang berjalan supaya tidak membingungkan saat kembali ke
   // step OTP dengan nomor yang berbeda.
@@ -118,7 +118,7 @@ async function requestOtp() {
     }>('/patient-portal/auth/request-otp', { nik: flow.nik, phone: flow.phone })
 
     // Backend SELALU mengirim cooldown_until (baik terkirim, baik masih dalam
-    // jeda per-pasien, maupun kena jeda progresif per-IP) -- disimpan ke state
+    // jeda per-pasien, maupun kena jeda progresif per-IP), disimpan ke state
     // persisted supaya countdown tetap akurat walau halaman ditinggal/refresh.
     if (data.cooldown_until) flow.otpCooldownUntil = data.cooldown_until
 
@@ -210,11 +210,11 @@ const newPassword = ref('')
 const newPasswordConfirm = ref('')
 
 // NIK di step 'new-form' terkunci secara default (hasil pindai KTP + step
-// identitas sebelumnya) -- OCR tidak selalu sempurna, jadi disediakan tombol
+// identitas sebelumnya), OCR tidak selalu sempurna, jadi disediakan tombol
 // pensil untuk membuka kunci kalau user perlu mengoreksi. Setiap kali NIK
 // berubah jadi 16 digit valid, tanggal lahir & jenis kelamin disinkronkan
 // ulang dari NIK, dan NIK dicek ulang ke backend (siapa tahu ternyata sudah
-// terdaftar) -- supaya koreksi manual tidak diam-diam membuat data pasien
+// terdaftar), supaya koreksi manual tidak diam-diam membuat data pasien
 // baru yang sebenarnya duplikat dari pasien yang sudah ada.
 const nikEditable = ref(false)
 const nikCheckLoading = ref(false)
@@ -229,7 +229,7 @@ async function checkNikExists() {
       ? 'NIK ini ternyata sudah terdaftar di SiLAKES. Kembali ke awal dan gunakan alur masuk/aktivasi akun, bukan daftar pasien baru.'
       : ''
   } catch {
-    // Pengecekan ini bersifat bantuan UX, bukan validasi wajib -- kalau gagal
+    // Pengecekan ini bersifat bantuan UX, bukan validasi wajib, kalau gagal
     // (mis. jaringan), submit tetap akan divalidasi ulang penuh di backend.
   } finally {
     nikCheckLoading.value = false
@@ -246,7 +246,7 @@ watch(() => flow.nik, (val) => {
     if (parsed.gender) scan.form.gender = parsed.gender
   }
   // Cek ke backend begitu sudah 16 digit, TERLEPAS dari parseNik valid atau
-  // tidak di klien -- backend adalah otoritas sesungguhnya (mis. NIK lama di
+  // tidak di klien, backend adalah otoritas sesungguhnya (mis. NIK lama di
   // data existing yang formatnya sedikit ganjil tapi tetap NIK asli), lihat
   // checkNikExists().
   if (val.replace(/\D/g, '').length === 16) {
@@ -261,7 +261,7 @@ function goToNewForm() {
 
 // Kalau halaman ini di-refresh TEPAT saat di step 'new-form' (foto sengaja
 // tidak dipersist, lihat usePersistedFlow), foto KTP di composable jadi
-// kosong lagi -- kembalikan ke step foto (bukan dari NIK dari awal), field
+// kosong lagi, kembalikan ke step foto (bukan dari NIK dari awal), field
 // yang sudah diisi tetap dikembalikan dari snapshot.
 onMounted(() => {
   if (flow.step === 'new-form') {
