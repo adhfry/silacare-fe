@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, CalendarClock, ChevronRight, HeartPulse, MapPin, CheckCircle2, Clock } from 'lucide-vue-next'
+import { FileText, CalendarClock, ChevronRight, HeartPulse, MapPin, CheckCircle2, Clock, BadgeCheck, CircleHelp } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -34,6 +34,14 @@ onMounted(async () => {
     // status cukup disembunyikan (kartu tidak dirender), jangan mengganggu
     // sisa dashboard dengan pesan error.
   }
+})
+
+const completenessTooltip = computed(() => {
+  const percent = auth.profile?.completeness?.percent
+  if (percent === undefined) return ''
+  return percent >= 100
+    ? 'Data diri Anda sudah lengkap.'
+    : `Data diri Anda baru ${percent}% lengkap. Lengkapi di halaman Akun agar petugas dapat melayani Anda lebih cepat dan akurat.`
 })
 
 function formatDate(value: string) {
@@ -73,8 +81,12 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm text-neutral-500">Halo,</p>
-        <h1 class="font-heading text-xl font-bold text-neutral-900">
+        <h1 class="font-heading flex items-center gap-1.5 text-xl font-bold text-neutral-900">
           {{ auth.profile?.patient.name || '...' }}
+          <tippy v-if="auth.profile?.completeness" :content="completenessTooltip" trigger="mouseenter click" theme="light">
+            <BadgeCheck v-if="auth.profile.completeness.percent >= 100" class="size-5 shrink-0 text-primary-600" />
+            <CircleHelp v-else class="size-5 shrink-0 text-amber-500" />
+          </tippy>
         </h1>
       </div>
       <AppLogo />

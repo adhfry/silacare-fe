@@ -146,7 +146,7 @@ function closeVillageSoon() {
           </button>
         </template>
         <p v-else class="p-3 text-xs text-neutral-400">
-          Kecamatan tidak ditemukan di data wilayah -- nama yang diketik tetap dipakai.
+          Kecamatan tidak ditemukan di data wilayah. Nama yang diketik tetap dapat digunakan.
         </p>
       </div>
     </div>
@@ -177,7 +177,7 @@ function closeVillageSoon() {
           </button>
         </template>
         <p v-else class="p-3 text-xs text-neutral-400">
-          Kelurahan/desa tidak ditemukan di data wilayah -- nama yang diketik tetap dipakai.
+          Kelurahan/desa tidak ditemukan di data wilayah. Nama yang diketik tetap dapat digunakan.
         </p>
       </div>
     </div>

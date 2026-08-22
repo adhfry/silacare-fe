@@ -84,7 +84,7 @@ async function submit() {
 
     <div class="px-5 pb-8">
       <AppAlert variant="info" class="mb-4">
-        Perubahan yang Anda ajukan di sini TIDAK langsung berlaku -- petugas Labkesda akan
+        Perubahan yang Anda ajukan di sini tidak langsung berlaku. Petugas Labkesda akan
         memeriksa dan menyetujuinya terlebih dahulu.
       </AppAlert>
 
