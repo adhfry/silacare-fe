@@ -12,7 +12,11 @@ const displayedNik = computed(() => {
   return auth.profile?.patient.nik_masked || '-'
 })
 
-function logout() {
+const showLogoutModal = ref(false)
+const loggingOut = ref(false)
+
+function confirmLogout() {
+  loggingOut.value = true
   auth.logout()
   router.push('/login')
 }
@@ -97,10 +101,12 @@ function logout() {
 
       <button
         class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-100 py-3.5 text-[15px] font-semibold text-red-600"
-        @click="logout"
+        @click="showLogoutModal = true"
       >
         <LogOut class="size-4.5" /> Keluar
       </button>
     </div>
+
+    <ConfirmLogoutModal v-model="showLogoutModal" :loading="loggingOut" @confirm="confirmLogout" />
   </div>
 </template>

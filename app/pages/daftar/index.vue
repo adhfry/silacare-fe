@@ -382,8 +382,8 @@ async function submitNewPatient() {
         <ShieldCheck class="size-4.5 shrink-0" /> Nomor WhatsApp terverifikasi. Buat kata sandi untuk akun Anda.
       </div>
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
-      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" required />
-      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required />
+      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" required show-toggle />
+      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required show-toggle />
       <AppButton type="submit" class="w-full" :loading="loading">Aktifkan Akun</AppButton>
     </form>
 
@@ -484,8 +484,8 @@ async function submitNewPatient() {
       <AppInput v-model="scan.form.rt_rw" label="RT/RW" placeholder="001/002" />
 
       <div class="border-t border-neutral-100 pt-4">
-        <AppInput v-model="newPassword" label="Buat Kata Sandi" type="password" placeholder="Minimal 8 karakter" class="mb-4" required />
-        <AppInput v-model="newPasswordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required />
+        <AppInput v-model="newPassword" label="Buat Kata Sandi" type="password" placeholder="Minimal 8 karakter" class="mb-4" required show-toggle />
+        <AppInput v-model="newPasswordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required show-toggle />
       </div>
 
       <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Daftar Sekarang</AppButton>

@@ -199,8 +199,8 @@ async function submitNewPassword() {
     <!-- Step: kata sandi baru -->
     <form v-else-if="flow.step === 'password'" class="space-y-4 animate-rise" @submit.prevent="submitNewPassword">
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
-      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" required />
-      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required />
+      <AppInput v-model="password" label="Kata Sandi Baru" type="password" placeholder="Minimal 8 karakter" required show-toggle />
+      <AppInput v-model="passwordConfirm" label="Ulangi Kata Sandi" type="password" placeholder="Ketik ulang kata sandi" required show-toggle />
       <AppButton type="submit" class="w-full" :loading="loading">Simpan Kata Sandi Baru</AppButton>
     </form>
   </div>

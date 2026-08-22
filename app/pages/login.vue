@@ -56,7 +56,7 @@ async function submit() {
         v-model="phone" label="Nomor HP" type="tel" inputmode="tel"
         placeholder="08xxxxxxxxxx" required
       />
-      <AppInput v-model="password" label="Kata Sandi" type="password" placeholder="Kata sandi Anda" required />
+      <AppInput v-model="password" label="Kata Sandi" type="password" placeholder="Kata sandi Anda" required show-toggle />
       <div class="text-right">
         <NuxtLink to="/lupa-password" class="text-xs font-medium text-primary-600">Lupa kata sandi?</NuxtLink>
       </div>
