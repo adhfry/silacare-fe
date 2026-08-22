@@ -21,14 +21,26 @@ withDefaults(defineProps<{ position?: 'top' | 'bottom'; flip?: boolean }>(), {
           <stop offset="100%" stop-color="var(--color-secondary-500)" />
         </linearGradient>
       </defs>
-      <path
-        fill="url(#wave-grad)" fill-opacity="0.16"
-        d="M0,96 C240,160 480,20 720,64 C960,108 1200,180 1440,110 L1440,0 L0,0 Z"
-      />
-      <path
-        fill="url(#wave-grad)" fill-opacity="0.28"
-        d="M0,140 C260,90 500,190 740,130 C980,70 1220,150 1440,100 L1440,0 L0,0 Z"
-      />
+      <path fill="url(#wave-grad)" fill-opacity="0.16">
+        <animate
+          attributeName="d"
+          dur="9s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+          values="
+            M0,96 C240,160 480,20 720,64 C960,108 1200,180 1440,110 L1440,0 L0,0 Z;
+            M0,64 C240,20 480,160 720,110 C960,60 1200,108 1440,96 L1440,0 L0,0 Z;
+            M0,96 C240,160 480,20 720,64 C960,108 1200,180 1440,110 L1440,0 L0,0 Z"
+        />
+      </path>
+      <path fill="url(#wave-grad)" fill-opacity="0.28">
+        <animate
+          attributeName="d"
+          dur="11s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+          values="
+            M0,140 C260,90 500,190 740,130 C980,70 1220,150 1440,100 L1440,0 L0,0 Z;
+            M0,100 C260,150 500,70 740,130 C980,190 1220,90 1440,140 L1440,0 L0,0 Z;
+            M0,140 C260,90 500,190 740,130 C980,70 1220,150 1440,100 L1440,0 L0,0 Z"
+        />
+      </path>
     </svg>
   </div>
 </template>

@@ -39,7 +39,7 @@ async function submit() {
 <template>
   <div class="flex flex-1 flex-col py-8">
     <div class="mb-8 flex flex-col items-center text-center">
-      <img src="/logo/silacare-logo.png" alt="SiLACARE" class="h-16 w-16 object-contain">
+      <AppLogo size-class="h-16 w-16" />
       <h1 class="font-heading mt-3 text-xl font-bold text-neutral-900">Masuk ke SiLACARE</h1>
       <p class="mt-1 text-sm text-neutral-500">Gunakan nomor HP terdaftar Anda</p>
     </div>

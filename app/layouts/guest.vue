@@ -11,7 +11,7 @@ const showBack = computed(() => route.path !== '/' && route.meta.hideBack !== tr
   <div class="relative min-h-dvh overflow-hidden bg-neutral-50 flex flex-col">
     <WaveOrnament position="top" />
 
-    <header v-if="showBack" class="relative z-10 flex items-center px-4 pt-4 safe-top">
+    <header v-if="showBack" class="relative z-10 flex items-center px-4 pt-8 safe-top">
       <button
         class="flex size-9 items-center justify-center rounded-full bg-white/80 text-neutral-600 shadow-sm backdrop-blur active:scale-95"
         aria-label="Kembali"

@@ -15,23 +15,55 @@ const { state: flow, clear: clearFlow } = usePersistedFlow('daftar', {
   phone: '',
   activationToken: '',
   newPatientForm: null as null | Record<string, string>,
+  // Timestamp ABSOLUT (ISO string), bukan detik hitung-mundur -- supaya jeda
+  // kirim-ulang OTP tetap akurat walau user pindah halaman/app lalu balik lagi
+  // (skenario nyata: isi NIK+HP, buka WhatsApp lihat kode, balik ke sini).
+  // Backend yang menentukan nilainya (jeda progresif, lihat OtpAbuseGuard).
+  otpCooldownUntil: null as string | null,
 })
 
 const loading = ref(false)
 const errorMessage = ref('')
 const infoMessage = ref('')
-const resendCooldown = ref(0)
-let cooldownTimer: ReturnType<typeof setInterval> | undefined
 
-function startCooldown(seconds = 60) {
-  resendCooldown.value = seconds
-  clearInterval(cooldownTimer)
-  cooldownTimer = setInterval(() => {
-    resendCooldown.value--
-    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
-  }, 1000)
+// Detik sisa dihitung ULANG setiap detik dari selisih terhadap otpCooldownUntil
+// yang tersimpan -- bukan disimpan sebagai angka mundur sendiri, jadi selalu
+// akurat berapa pun lama halaman ini tidak aktif.
+const nowTick = ref(Date.now())
+let tickTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  tickTimer = setInterval(() => { nowTick.value = Date.now() }, 1000)
+})
+onBeforeUnmount(() => clearInterval(tickTimer))
+
+const resendCooldown = computed(() => {
+  if (!flow.otpCooldownUntil) return 0
+  const remaining = Math.ceil((new Date(flow.otpCooldownUntil).getTime() - nowTick.value) / 1000)
+  return Math.max(0, remaining)
+})
+
+function formatCooldown(totalSeconds: number): string {
+  if (totalSeconds < 60) return `${totalSeconds} detik`
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return seconds > 0 ? `${minutes} menit ${seconds} detik` : `${minutes} menit`
 }
-onBeforeUnmount(() => clearInterval(cooldownTimer))
+
+// Nomor HP diformat +62 untuk ditampilkan di layar konfirmasi step OTP.
+const displayPhone = computed(() => {
+  const digits = flow.phone.replace(/\D/g, '')
+  const local = digits.startsWith('0') ? digits.slice(1) : digits.startsWith('62') ? digits.slice(2) : digits
+  return `+62 ${local}`
+})
+
+function changePhoneNumber() {
+  // Kembali ke step identitas untuk koreksi -- NIK dipertahankan (kemungkinan
+  // besar sudah benar), hanya nomor HP yang salah ketik. Batalkan juga
+  // cooldown yang sedang berjalan supaya tidak membingungkan saat kembali ke
+  // step OTP dengan nomor yang berbeda.
+  flow.otpCooldownUntil = null
+  flow.step = 'identity'
+}
 
 // ---------- Step 1: NIK + HP ----------
 async function checkIdentity() {
@@ -71,10 +103,26 @@ async function checkIdentity() {
 
 // ---------- Step 2: OTP (pasien lama) ----------
 async function requestOtp() {
+  errorMessage.value = ''
   try {
-    await api.post('/patient-portal/auth/request-otp', { nik: flow.nik, phone: flow.phone })
-    infoMessage.value = 'Kode OTP telah dikirim melalui WhatsApp ke nomor Anda.'
-    startCooldown(60)
+    const data = await api.post<{
+      otp_sent: boolean
+      reason?: 'too_many_requests' | 'already_sent'
+      cooldown_until?: string | null
+    }>('/patient-portal/auth/request-otp', { nik: flow.nik, phone: flow.phone })
+
+    // Backend SELALU mengirim cooldown_until (baik terkirim, baik masih dalam
+    // jeda per-pasien, maupun kena jeda progresif per-IP) -- disimpan ke state
+    // persisted supaya countdown tetap akurat walau halaman ditinggal/refresh.
+    if (data.cooldown_until) flow.otpCooldownUntil = data.cooldown_until
+
+    if (data.otp_sent) {
+      infoMessage.value = 'Kode OTP telah dikirim melalui WhatsApp ke nomor Anda.'
+    } else if (data.reason === 'too_many_requests') {
+      infoMessage.value = 'Terlalu sering meminta kode OTP. Demi keamanan, mohon tunggu sebelum mencoba lagi.'
+    } else {
+      infoMessage.value = 'Kode OTP sebelumnya masih berlaku. Tunggu sebentar sebelum mengirim ulang.'
+    }
   } catch (err) {
     errorMessage.value = err instanceof ApiError ? err.message : 'Gagal mengirim OTP'
   }
@@ -234,7 +282,7 @@ async function submitNewPatient() {
 <template>
   <div class="flex flex-1 flex-col py-8">
     <div class="mb-6 flex flex-col items-center text-center animate-rise">
-      <img src="/logo/silacare-logo.png" alt="SiLACARE" class="h-16 w-16 object-contain">
+      <AppLogo size-class="h-16 w-16" />
       <h1 class="font-heading mt-3 text-xl font-bold text-neutral-900">Daftar Akun SiLACARE</h1>
       <p class="mt-1 text-sm text-neutral-500">Masukkan NIK Anda untuk memulai</p>
     </div>
@@ -252,6 +300,13 @@ async function submitNewPatient() {
 
     <!-- Step: OTP (pasien yang datanya sudah ada di SiLAKES) -->
     <div v-else-if="flow.step === 'otp'" class="space-y-4 animate-rise">
+      <p class="text-center text-sm text-neutral-500">
+        Apakah nomor <span class="font-semibold text-neutral-700">{{ displayPhone }}</span> ini adalah nomor Anda?
+        Jika bukan,
+        <button type="button" class="font-semibold text-primary-600 underline underline-offset-2" @click="changePhoneNumber">
+          ubah nomor sekarang
+        </button>.
+      </p>
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
       <AppAlert v-else-if="infoMessage" variant="info">{{ infoMessage }}</AppAlert>
       <form class="space-y-4" @submit.prevent="verifyOtp">
@@ -262,7 +317,7 @@ async function submitNewPatient() {
         class="w-full text-center text-sm font-medium text-primary-600 disabled:text-neutral-400"
         :disabled="resendCooldown > 0" @click="requestOtp"
       >
-        {{ resendCooldown > 0 ? `Kirim ulang dalam ${resendCooldown} detik` : 'Kirim ulang kode OTP' }}
+        {{ resendCooldown > 0 ? `Kirim ulang dalam ${formatCooldown(resendCooldown)}` : 'Kirim ulang kode OTP' }}
       </button>
     </div>
 

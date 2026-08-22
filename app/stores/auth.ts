@@ -9,6 +9,7 @@ interface PatientProfile {
   patient: {
     no_reg: string
     name: string
+    nik: string
     nik_masked: string
     gender: 'L' | 'P'
     tempat_lahir: string

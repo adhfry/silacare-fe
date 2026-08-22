@@ -89,7 +89,7 @@ async function submitRegister() {
         v-model="nik" label="NIK (sesuai KTP)" inputmode="numeric" :maxlength="16"
         placeholder="16 digit angka"
       />
-      <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Cek Kelayakan</AppButton>
+      <AppButton type="submit" variant="secondary" class="w-full" :loading="loading">Cek Sekarang</AppButton>
     </form>
 
     <!-- Step: pilih kategori -->

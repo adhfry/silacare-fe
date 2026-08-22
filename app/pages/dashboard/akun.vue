@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { LogOut, MapPin, Phone, Fingerprint } from 'lucide-vue-next'
+import { LogOut, MapPin, Phone, Fingerprint, Eye, EyeOff } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const auth = useAuthStore()
 const router = useRouter()
+
+const nikVisible = ref(false)
+const displayedNik = computed(() => {
+  if (nikVisible.value) return auth.profile?.patient.nik || '-'
+  return auth.profile?.patient.nik_masked || '-'
+})
 
 function logout() {
   auth.logout()
@@ -26,12 +32,22 @@ function logout() {
       </div>
 
       <div class="mt-4 divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
-        <div class="flex items-center gap-3 p-4">
-          <Fingerprint class="size-4.5 text-neutral-400" />
-          <div>
-            <p class="text-xs text-neutral-400">NIK</p>
-            <p class="text-sm font-medium text-neutral-700">{{ auth.profile?.patient.nik_masked }}</p>
+        <div class="flex items-center justify-between gap-3 p-4">
+          <div class="flex items-center gap-3">
+            <Fingerprint class="size-4.5 text-neutral-400" />
+            <div>
+              <p class="text-xs text-neutral-400">NIK</p>
+              <p class="text-sm font-medium text-neutral-700">{{ displayedNik }}</p>
+            </div>
           </div>
+          <button
+            type="button" class="flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 active:bg-neutral-100"
+            :aria-label="nikVisible ? 'Sembunyikan NIK' : 'Tampilkan NIK'"
+            @click="nikVisible = !nikVisible"
+          >
+            <EyeOff v-if="nikVisible" class="size-4.5" />
+            <Eye v-else class="size-4.5" />
+          </button>
         </div>
         <div class="flex items-center gap-3 p-4">
           <Phone class="size-4.5 text-neutral-400" />
