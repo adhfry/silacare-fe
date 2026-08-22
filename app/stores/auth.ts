@@ -7,6 +7,7 @@ interface PatientProfile {
   phone_verified: boolean
   last_login_at: string | null
   completeness: { percent: number; missing_fields: string[] } | null
+  has_pending_update_request: boolean
   patient: {
     no_reg: string
     name: string

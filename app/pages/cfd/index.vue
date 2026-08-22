@@ -177,8 +177,12 @@ async function submitRegister() {
     </div>
 
     <!-- Belum waktunya: CFD cuma berlangsung Minggu 07.00+ -->
-    <div v-if="timingLoading" class="flex justify-center py-12">
-      <div class="size-8 animate-spin rounded-full border-2 border-secondary-200 border-t-secondary-600" />
+    <div v-if="timingLoading" class="flex flex-1 flex-col items-center py-8">
+      <SkeletonBlock rounded="rounded-full" class="size-16" />
+      <SkeletonBlock class="mt-4 h-5 w-48" />
+      <SkeletonBlock class="mt-2 h-4 w-64" />
+      <SkeletonBlock class="mt-1 h-4 w-52" />
+      <SkeletonBlock rounded="rounded-2xl" class="mt-5 h-20 w-40" />
     </div>
 
     <div v-else-if="!timingAllowed" class="flex flex-1 flex-col items-center justify-center text-center">

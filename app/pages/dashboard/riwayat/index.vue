@@ -55,8 +55,15 @@ function formatDate(value: string | null) {
     <div class="px-5 pb-6">
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
 
-      <div v-else-if="loading" class="flex justify-center py-16">
-        <div class="size-8 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+      <div v-else-if="loading" class="space-y-3">
+        <div v-for="i in 4" :key="i" class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+          <SkeletonBlock rounded="rounded-xl" class="size-10 shrink-0" />
+          <div class="min-w-0 flex-1 space-y-2">
+            <SkeletonBlock class="h-4 w-2/3" />
+            <SkeletonBlock class="h-3 w-1/3" />
+          </div>
+          <SkeletonBlock rounded="rounded-full" class="h-5 w-16 shrink-0" />
+        </div>
       </div>
 
       <div v-else-if="!items.length" class="flex flex-col items-center py-16 text-center">

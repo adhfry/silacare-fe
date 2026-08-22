@@ -26,7 +26,7 @@ export function useApi() {
   const config = useRuntimeConfig()
   const auth = useAuthStore()
 
-  async function request<T = any>(method: 'GET' | 'POST', path: string, body?: Record<string, any>): Promise<T> {
+  async function request<T = any>(method: 'GET' | 'POST' | 'PATCH', path: string, body?: Record<string, any>): Promise<T> {
     try {
       const res = await $fetch<ApiEnvelope<T>>(`${config.public.apiBase}${path}`, {
         method,
@@ -47,5 +47,6 @@ export function useApi() {
   return {
     get: <T = any>(path: string) => request<T>('GET', path),
     post: <T = any>(path: string, body?: Record<string, any>) => request<T>('POST', path, body),
+    patch: <T = any>(path: string, body?: Record<string, any>) => request<T>('PATCH', path, body),
   }
 }

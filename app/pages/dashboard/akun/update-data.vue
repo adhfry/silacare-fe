@@ -1,13 +1,71 @@
 <script setup lang="ts">
-import { Send } from 'lucide-vue-next'
+import { Send, Clock, History, CheckCircle2, XCircle, Hourglass } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+
+interface UpdateField {
+  field_name: string
+  label: string
+  old_value: string | null
+  new_value: string
+  status: 'pending_review' | 'approved' | 'rejected'
+  reviewed_at: string | null
+  reviewer_name: string | null
+  catatan_reviewer: string | null
+}
+
+interface UpdateBatch {
+  batch_id: string
+  diajukan_at: string
+  status: 'pending' | 'selesai'
+  fields: UpdateField[]
+}
 
 const auth = useAuthStore()
 const api = useApi()
 const router = useRouter()
 
 const patient = auth.profile?.patient
+
+const history = ref<UpdateBatch[]>([])
+const historyLoading = ref(true)
+const pendingBatch = computed(() => history.value.find((b) => b.status === 'pending') || null)
+
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+}
+
+const fieldStatusLabel: Record<UpdateField['status'], string> = {
+  pending_review: 'Menunggu',
+  approved: 'Disetujui',
+  rejected: 'Ditolak',
+}
+
+// Field boolean disimpan backend sebagai teks '1'/'0' (atau kosong) --
+// tampilkan sebagai "Ya"/"Tidak" alih-alih angka mentah, konsisten dengan
+// toggle Ya/Tidak yang dipakai di form pengajuan.
+const BOOLEAN_FIELDS = ['is_bpjs', 'is_perokok']
+
+function displayFieldValue(fieldName: string, value: string | null): string {
+  if (BOOLEAN_FIELDS.includes(fieldName)) {
+    return value === '1' ? 'Ya' : 'Tidak'
+  }
+  return value || 'Kosong'
+}
+
+async function loadHistory() {
+  historyLoading.value = true
+  try {
+    history.value = await api.get('/patient-portal/profile/update-requests')
+  } catch {
+    // Riwayat gagal dimuat bukan penghalang -- form pengajuan tetap bisa
+    // dicoba, validasi "masih ada yang pending" tetap dijaga di backend.
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+onMounted(loadHistory)
 
 const form = reactive({
   name: patient?.name || '',
@@ -59,6 +117,11 @@ async function submit() {
   errorMessage.value = ''
   successMessage.value = ''
 
+  if (pendingBatch.value) {
+    errorMessage.value = 'Anda masih memiliki pengajuan yang menunggu persetujuan petugas. Tunggu hingga selesai diproses sebelum mengajukan perubahan baru.'
+    return
+  }
+
   const changes = changedFields.value
   if (!Object.keys(changes).length) {
     errorMessage.value = 'Belum ada data yang diubah'
@@ -70,6 +133,7 @@ async function submit() {
     const data = await api.post<{ jumlah_diajukan: number }>('/patient-portal/profile/request-update', { changes })
     successMessage.value = `${data.jumlah_diajukan} perubahan data telah diajukan, menunggu persetujuan petugas Labkesda.`
     Object.assign(original, form)
+    await loadHistory()
   } catch (err) {
     errorMessage.value = err instanceof ApiError ? err.message : 'Gagal mengajukan perubahan data'
   } finally {
@@ -83,15 +147,41 @@ async function submit() {
     <PageHeader title="Update Informasi Pasien" />
 
     <div class="px-5 pb-8">
-      <AppAlert variant="info" class="mb-4">
+      <AppAlert v-if="!pendingBatch" variant="info" class="mb-4">
         Perubahan yang Anda ajukan di sini tidak langsung berlaku. Petugas Labkesda akan
-        memeriksa dan menyetujuinya terlebih dahulu.
+        memeriksa dan menyetujuinya terlebih dahulu. Anda hanya dapat mengajukan satu
+        perubahan pada satu waktu, dan perlu menunggu persetujuan sebelum mengajukan lagi.
       </AppAlert>
 
       <AppAlert v-if="successMessage" variant="success" class="mb-4">{{ successMessage }}</AppAlert>
       <AppAlert v-if="errorMessage" variant="error" class="mb-4">{{ errorMessage }}</AppAlert>
 
-      <form class="space-y-4" @submit.prevent="submit">
+      <!-- Pengajuan yang masih menunggu persetujuan -- form disembunyikan
+           selama ini masih ada, sesuai kebijakan "satu pengajuan, tunggu
+           persetujuan dulu sebelum bisa mengajukan lagi". -->
+      <div v-if="pendingBatch" class="mb-4 rounded-2xl border-2 border-amber-200 bg-amber-50 p-4">
+        <div class="flex items-center gap-2 text-amber-800">
+          <Hourglass class="size-5 shrink-0" />
+          <h2 class="font-heading text-sm font-bold">Pengajuan Menunggu Persetujuan</h2>
+        </div>
+        <p class="mt-1.5 text-xs text-amber-700">
+          Diajukan pada {{ formatDateTime(pendingBatch.diajukan_at) }}. Anda dapat mengajukan
+          perubahan baru setelah pengajuan ini disetujui atau ditolak petugas.
+        </p>
+        <div class="mt-3 space-y-2">
+          <div v-for="f in pendingBatch.fields" :key="f.field_name" class="rounded-xl bg-white px-3 py-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-neutral-700">{{ f.label }}</span>
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">Menunggu</span>
+            </div>
+            <p class="mt-1 text-neutral-500">
+              {{ displayFieldValue(f.field_name, f.old_value) }} <span class="mx-1">→</span> <span class="text-neutral-800">{{ displayFieldValue(f.field_name, f.new_value) }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form v-else class="space-y-4" @submit.prevent="submit">
         <AppInput v-model="form.name" label="Nama Lengkap" />
 
         <div class="grid grid-cols-2 gap-3">
@@ -210,6 +300,68 @@ async function submit() {
           <Send class="size-4.5" /> Ajukan Perubahan
         </AppButton>
       </form>
+
+      <!-- Riwayat pengajuan update data -->
+      <div class="mt-8">
+        <h2 class="font-heading mb-3 flex items-center gap-1.5 text-base font-semibold text-neutral-900">
+          <History class="size-4.5 text-neutral-400" /> Riwayat Pengajuan Update Data
+        </h2>
+
+        <div v-if="historyLoading" class="space-y-3">
+          <div v-for="i in 2" :key="i" class="rounded-2xl border-2 border-neutral-100 p-4">
+            <div class="flex items-center justify-between">
+              <SkeletonBlock class="h-3 w-32" />
+              <SkeletonBlock rounded="rounded-full" class="h-5 w-16" />
+            </div>
+            <SkeletonBlock rounded="rounded-xl" class="mt-3 h-12 w-full" />
+          </div>
+        </div>
+
+        <p v-else-if="!history.length" class="rounded-xl bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-400">
+          Belum ada riwayat pengajuan perubahan data.
+        </p>
+
+        <div v-else class="space-y-3">
+          <div v-for="batch in history" :key="batch.batch_id" class="rounded-2xl border-2 border-neutral-100 p-4">
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
+                <Clock class="size-3.5" /> {{ formatDateTime(batch.diajukan_at) }}
+              </span>
+              <span
+                class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                :class="batch.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-secondary-100 text-secondary-700'"
+              >
+                {{ batch.status === 'pending' ? 'Menunggu' : 'Selesai' }}
+              </span>
+            </div>
+
+            <div class="mt-3 space-y-2">
+              <div v-for="f in batch.fields" :key="f.field_name" class="rounded-xl bg-neutral-50 px-3 py-2 text-xs">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-semibold text-neutral-700">{{ f.label }}</span>
+                  <span
+                    class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-medium"
+                    :class="{
+                      'bg-amber-100 text-amber-700': f.status === 'pending_review',
+                      'bg-secondary-100 text-secondary-700': f.status === 'approved',
+                      'bg-red-100 text-red-700': f.status === 'rejected',
+                    }"
+                  >
+                    <Hourglass v-if="f.status === 'pending_review'" class="size-3" />
+                    <CheckCircle2 v-else-if="f.status === 'approved'" class="size-3" />
+                    <XCircle v-else class="size-3" />
+                    {{ fieldStatusLabel[f.status] }}
+                  </span>
+                </div>
+                <p class="mt-1 text-neutral-500">
+                  {{ displayFieldValue(f.field_name, f.old_value) }} <span class="mx-1">→</span> <span class="text-neutral-800">{{ displayFieldValue(f.field_name, f.new_value) }}</span>
+                </p>
+                <p v-if="f.catatan_reviewer" class="mt-1 italic text-neutral-400">Catatan petugas: {{ f.catatan_reviewer }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

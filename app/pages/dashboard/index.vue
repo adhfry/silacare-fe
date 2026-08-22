@@ -26,6 +26,7 @@ interface CfdStatus {
 }
 
 const cfdStatus = ref<CfdStatus | null>(null)
+const cfdLoading = ref(true)
 onMounted(async () => {
   try {
     cfdStatus.value = await api.get<CfdStatus>('/patient-portal/cfd-status')
@@ -33,6 +34,8 @@ onMounted(async () => {
     // Kartu CFD bersifat informatif, bukan alur inti dashboard -- gagal ambil
     // status cukup disembunyikan (kartu tidak dirender), jangan mengganggu
     // sisa dashboard dengan pesan error.
+  } finally {
+    cfdLoading.value = false
   }
 })
 
@@ -142,7 +145,22 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
     </NuxtLink>
 
     <!-- Info & status CFD gratis -->
-    <div v-if="cfdStatus" class="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
+    <div v-if="cfdLoading" class="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
+      <div class="flex items-center gap-3 bg-neutral-50 p-4">
+        <SkeletonBlock rounded="rounded-xl" class="size-9 shrink-0" />
+        <div class="flex-1 space-y-2">
+          <SkeletonBlock class="h-4 w-48" />
+          <SkeletonBlock class="h-3 w-36" />
+        </div>
+      </div>
+      <div class="space-y-2.5 p-4">
+        <SkeletonBlock class="h-4 w-full" />
+        <SkeletonBlock class="h-4 w-5/6" />
+        <SkeletonBlock rounded="rounded-xl" class="mt-1 h-10 w-full" />
+      </div>
+    </div>
+
+    <div v-else-if="cfdStatus" class="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
       <div class="flex items-center gap-3 bg-secondary-50 p-4">
         <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-secondary-600">
           <HeartPulse class="size-4.5" />

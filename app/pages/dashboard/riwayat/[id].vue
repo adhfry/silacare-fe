@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Download, FileWarning, QrCode, Copy, Check } from 'lucide-vue-next'
+import { Download, FileWarning, QrCode, Copy, Check, Clock3, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
+import { isAbnormalResult } from '~/utils/resultStatus'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -36,6 +37,7 @@ interface ResultDetail {
   qr_expired: boolean
   qr_image: string | null
   qr_text: string | null
+  sudah_diverifikasi: boolean
   layanan: LayananItem[]
   biaya: Biaya
   items: ResultItem[]
@@ -43,6 +45,7 @@ interface ResultDetail {
 
 const route = useRoute()
 const api = useApi()
+const auth = useAuthStore()
 
 const detail = ref<ResultDetail | null>(null)
 const loading = ref(true)
@@ -57,6 +60,19 @@ function copyQrText() {
   navigator.clipboard?.writeText(detail.value.qr_text)
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
+}
+
+// Fallback kalau petugas tidak bisa scan QR pasien.
+const showScanner = ref(false)
+
+async function onQrDetected(code: string) {
+  showScanner.value = false
+  try {
+    await api.post('/patient-portal/checkin/verify', { code })
+    if (detail.value) detail.value.sudah_diverifikasi = true
+  } catch (err) {
+    errorMessage.value = err instanceof ApiError ? err.message : 'Gagal memverifikasi QR'
+  }
 }
 
 onMounted(async () => {
@@ -80,6 +96,27 @@ function formatDate(value: string | null) {
 function formatRupiah(value: number) {
   return value.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })
 }
+
+// Umur pasien -- dipakai aturan nilai rujukan berbasis usia (mis. "th:<=12:...").
+// Perhitungan sama seperti umur() di FE_SiLAKES, supaya hasil konsisten.
+const patientAge = computed<number | null>(() => {
+  const tglLahir = auth.profile?.patient.tgl_lahir
+  if (!tglLahir) return null
+  const birthDate = new Date(tglLahir)
+  const today = new Date()
+  let usia = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const dayDiff = today.getDate() - birthDate.getDate()
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) usia--
+  return usia
+})
+
+function isAbnormal(item: ResultItem): boolean {
+  return isAbnormalResult(item.hasil, item.nilai_rujukan, {
+    age: patientAge.value,
+    gender: auth.profile?.patient.gender ?? null,
+  })
+}
 </script>
 
 <template>
@@ -89,8 +126,41 @@ function formatRupiah(value: number) {
     <div class="px-5 pb-8">
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
 
-      <div v-else-if="loading" class="flex justify-center py-16">
-        <div class="size-8 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+      <div v-else-if="loading">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+            <SkeletonBlock class="h-3 w-24" />
+            <SkeletonBlock class="mt-2 h-5 w-32" />
+          </div>
+          <div class="rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+            <SkeletonBlock class="h-3 w-16" />
+            <SkeletonBlock class="mt-2 h-5 w-20" />
+          </div>
+        </div>
+
+        <div class="mt-3 rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
+          <SkeletonBlock class="mx-auto h-4 w-40" />
+          <SkeletonBlock rounded="rounded-xl" class="mx-auto mt-3 size-48" />
+        </div>
+
+        <SkeletonBlock class="mt-5 mb-2 h-4 w-24" />
+        <div class="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
+          <div v-for="i in 2" :key="i" class="flex items-center justify-between p-4">
+            <SkeletonBlock class="h-4 w-32" />
+            <SkeletonBlock class="h-4 w-16" />
+          </div>
+        </div>
+
+        <SkeletonBlock class="mt-5 mb-2 h-4 w-32" />
+        <div class="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
+          <div v-for="i in 4" :key="i" class="flex items-center justify-between p-4">
+            <div class="space-y-2">
+              <SkeletonBlock class="h-4 w-28" />
+              <SkeletonBlock class="h-3 w-20" />
+            </div>
+            <SkeletonBlock class="h-4 w-12" />
+          </div>
+        </div>
       </div>
 
       <template v-else-if="detail">
@@ -123,23 +193,52 @@ function formatRupiah(value: number) {
           <p class="mt-1 text-xs text-secondary-600">orang, diperbarui otomatis</p>
         </div>
 
+        <!-- Sudah check-in (via QR pribadi discan petugas ATAU fallback QR
+             admin discan sendiri). -->
+        <div v-if="detail.sudah_diverifikasi" class="mt-3 flex items-center gap-3 rounded-2xl bg-secondary-50 p-4 shadow-sm shadow-neutral-200/60">
+          <CheckCircle2 class="size-5 shrink-0 text-secondary-600" />
+          <p class="text-sm font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
+        </div>
+
         <!-- QR check-in: cuma untuk kunjungan online non-CFD (CFD punya worklist
              realtime sendiri, tidak perlu scan). Blur+Expired kalau sudah lewat
              masa berlaku, supaya tidak bisa dipakai check-in dua kali. -->
-        <div v-if="detail.qr_image" class="mt-3 rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
+        <div v-else-if="detail.qr_image" class="mt-3 rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
           <p class="mb-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-neutral-700">
             <QrCode class="size-4.5" /> Tunjukkan QR ini saat datang
           </p>
           <img :src="detail.qr_image" alt="QR check-in" class="mx-auto size-48 rounded-xl border border-neutral-100">
           <p class="mt-3 text-xs text-neutral-400">Petugas akan memindai QR ini agar pemeriksaan Anda otomatis terisi</p>
+
+          <div v-if="detail.qr_text" class="mt-3">
+            <p class="text-xs text-neutral-400">Kendala scan? Petugas dapat memasukkan kode ini secara manual:</p>
+            <p class="mt-1.5 break-all rounded-lg bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-700">{{ detail.qr_text }}</p>
+          </div>
+
           <button
             type="button" class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-500"
             @click="copyQrText"
           >
             <Check v-if="copied" class="size-3.5 text-secondary-600" />
             <Copy v-else class="size-3.5" />
-            {{ copied ? 'Kode tersalin' : 'Kendala scan? Salin kode' }}
+            {{ copied ? 'Kode tersalin' : 'Salin kode' }}
           </button>
+
+          <div class="mt-4 border-t border-neutral-100 pt-4">
+            <p class="mb-1.5 flex items-center justify-center gap-1 text-xs text-neutral-400">
+              Petugas tidak bisa memindai QR Anda?
+              <tippy content="Berikan HP Anda kepada petugas di loket. Petugas akan menampilkan QR di layar admin, lalu Anda memindainya dari HP ini untuk verifikasi kedatangan." trigger="mouseenter click" theme="light">
+                <CircleHelp class="size-3.5 shrink-0 cursor-help text-neutral-400" />
+              </tippy>
+            </p>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-neutral-50 px-3 py-1.5 text-xs font-medium text-primary-600"
+              @click="showScanner = true"
+            >
+              <ScanLine class="size-3.5" /> Scan QR Admin
+            </button>
+          </div>
         </div>
         <div v-else-if="detail.qr_expired" class="relative mt-3 overflow-hidden rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
           <div class="pointer-events-none select-none blur-sm">
@@ -196,18 +295,32 @@ function formatRupiah(value: number) {
         </div>
 
         <p class="mt-5 mb-2 text-sm font-medium text-neutral-700">Detail Parameter</p>
-        <div class="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
+
+        <div v-if="!detail.is_ready" class="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+          <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <Clock3 class="size-4.5" />
+          </div>
+          <p class="text-sm text-neutral-500">
+            Detail parameter belum tersedia saat ini. Akan tampil begitu hasil dikonfirmasi oleh petugas laboratorium.
+          </p>
+        </div>
+
+        <div v-else class="divide-y divide-neutral-100 overflow-hidden rounded-2xl bg-white shadow-sm shadow-neutral-200/60">
           <div v-for="(item, idx) in detail.items" :key="idx" class="flex items-center justify-between p-4">
             <div class="min-w-0">
               <p class="truncate text-sm font-medium text-neutral-800">{{ item.parameter || item.nama }}</p>
               <p class="text-xs text-neutral-400">Rujukan: {{ item.nilai_rujukan || '-' }}</p>
             </div>
             <div class="shrink-0 text-right">
-              <p class="text-sm font-bold text-neutral-900">{{ item.hasil ?? '-' }} <span class="text-xs font-normal text-neutral-400">{{ item.satuan }}</span></p>
+              <p class="text-sm font-bold" :class="isAbnormal(item) ? 'text-red-600' : 'text-neutral-900'">
+                {{ item.hasil ?? '-' }} <span class="text-xs font-normal text-neutral-400">{{ item.satuan }}</span>
+              </p>
             </div>
           </div>
         </div>
       </template>
     </div>
+
+    <QrScannerModal v-model="showScanner" @detected="onQrDetected" />
   </div>
 </template>

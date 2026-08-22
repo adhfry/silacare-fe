@@ -49,13 +49,16 @@ function logout() {
             <Eye v-else class="size-4.5" />
           </button>
         </div>
-        <div class="flex items-center gap-3 p-4">
-          <Phone class="size-4.5 text-neutral-400" />
-          <div>
-            <p class="text-xs text-neutral-400">Nomor HP</p>
-            <p class="text-sm font-medium text-neutral-700">{{ auth.profile?.phone }}</p>
+        <NuxtLink to="/dashboard/akun/ubah-nomor-hp" class="flex items-center justify-between gap-3 p-4">
+          <div class="flex items-center gap-3">
+            <Phone class="size-4.5 text-neutral-400" />
+            <div>
+              <p class="text-xs text-neutral-400">Nomor HP</p>
+              <p class="text-sm font-medium text-neutral-700">{{ auth.profile?.phone }}</p>
+            </div>
           </div>
-        </div>
+          <ChevronRight class="size-4 shrink-0 text-neutral-300" />
+        </NuxtLink>
         <div class="flex items-center gap-3 p-4">
           <MapPin class="size-4.5 text-neutral-400" />
           <div>
