@@ -231,7 +231,11 @@ const totalBiaya = computed(() =>
 // dan arahkan untuk menyelesaikan yang sudah ada dulu.
 const activeTodayQueue = computed(() => {
   const todayStr = new Date().toISOString().slice(0, 10)
-  return queues.value.find((q) => q.tanggal === todayStr && q.status !== 'completed') || null
+  // Janji yang sudah dibatalkan/ditolak TIDAK dianggap aktif -- status
+  // backend sengaja tetap 'pending' saat dibatalkan/ditolak (dibatalkan_at/
+  // ditolak_at dipakai sebagai penanda terpisah), jadi harus dicek eksplisit
+  // di sini juga, bukan hanya status !== 'completed'.
+  return queues.value.find((q) => q.tanggal === todayStr && q.status !== 'completed' && !q.dibatalkan && !q.ditolak) || null
 })
 
 async function loadQueues() {
