@@ -5,8 +5,8 @@ const route = useRoute()
 
 const items = [
   { to: '/dashboard', label: 'Beranda', icon: Home },
-  { to: '/dashboard/riwayat', label: 'Riwayat', icon: FileText },
   { to: '/dashboard/antrean', label: 'Antrean', icon: CalendarClock },
+  { to: '/dashboard/riwayat', label: 'Riwayat', icon: FileText },
   { to: '/dashboard/akun', label: 'Akun', icon: User },
 ]
 

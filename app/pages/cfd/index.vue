@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { HeartPulse, PartyPopper, Info } from 'lucide-vue-next'
+import { HeartPulse, PartyPopper, Info, Clock3 } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'guest' })
 
 const api = useApi()
 const router = useRouter()
 const flow = useCfdFlow()
+const auth = useAuthStore()
 
-type Step = 'nik' | 'pilih' | 'sukses' | 'tidak_layak'
+type Step = 'nik' | 'konfirmasi' | 'pilih' | 'sukses' | 'tidak_layak'
 const step = ref<Step>('nik')
 const loading = ref(false)
 const errorMessage = ref('')
@@ -19,6 +20,83 @@ const patientName = ref('')
 const kondisiPuasa = ref<'ya' | 'tidak' | ''>('')
 const kategori = ref<'asam_urat' | 'cholesterol' | ''>('')
 const antrianKe = ref<number | null>(null)
+
+// Jendela waktu pendaftaran CFD (Minggu 07.00+, lihat CfdRegistrationService
+// backend) -- dicek SEBELUM apa pun ditampilkan, supaya tidak ada yang
+// sempat isi form kalau memang belum waktunya sama sekali.
+const timingLoading = ref(true)
+const timingAllowed = ref(true)
+const nextAvailableAt = ref<string | null>(null)
+
+const nowTick = ref(Date.now())
+let tickTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  tickTimer = setInterval(() => { nowTick.value = Date.now() }, 1000)
+})
+onBeforeUnmount(() => clearInterval(tickTimer))
+
+const countdown = computed(() => {
+  if (!nextAvailableAt.value) return null
+  const diffMs = new Date(nextAvailableAt.value).getTime() - nowTick.value
+  if (diffMs <= 0) return null
+  const totalSeconds = Math.floor(diffMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return days > 0 ? `${days} hari ${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+})
+
+function formatFullDate(value: string) {
+  return new Date(value).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    + ', ' + new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
+
+async function checkTiming() {
+  timingLoading.value = true
+  try {
+    const data = await api.get<{ allowed: boolean; next_available_at: string | null }>('/cfd/timing')
+    timingAllowed.value = data.allowed
+    nextAvailableAt.value = data.next_available_at
+  } catch {
+    // Kalau gagal cek, biarkan lanjut -- backend tetap jadi validator final
+    // di endpoint register/register-new, jendela waktu tidak pernah dilewati
+    // hanya karena pengecekan awal ini gagal (mis. jaringan).
+    timingAllowed.value = true
+  } finally {
+    timingLoading.value = false
+  }
+}
+
+// Pasien yang sudah login TIDAK perlu isi ulang NIK -- identitasnya sudah
+// pasti dari akun yang sedang login (bukan input bebas), langsung ke
+// konfirmasi lalu pilih kategori.
+async function checkNikForLoggedInUser() {
+  const patientNik = auth.profile?.patient.nik
+  if (!patientNik) return
+
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const data = await api.post<any>('/cfd/check-nik', { nik: patientNik })
+    nik.value = patientNik
+    patientName.value = data.patient?.name || auth.profile?.patient.name || ''
+    eligibility.value = data.eligibility
+    step.value = data.status === 'layak' ? 'konfirmasi' : 'tidak_layak'
+  } catch (err) {
+    errorMessage.value = err instanceof ApiError ? err.message : 'Terjadi kesalahan'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  await checkTiming()
+  if (timingAllowed.value && auth.isLoggedIn) {
+    await checkNikForLoggedInUser()
+  }
+})
 
 async function checkNik() {
   errorMessage.value = ''
@@ -78,12 +156,48 @@ async function submitRegister() {
       <div class="flex size-16 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600">
         <HeartPulse class="size-8" />
       </div>
-      <h1 class="font-heading mt-3 text-xl font-bold text-neutral-900">Car Free Day Gratis</h1>
+      <h1 class="font-heading mt-3 text-xl font-bold text-neutral-900">Pemeriksaan Gratis di Car Free Day</h1>
       <p class="mt-1 text-sm text-neutral-500">Cek kolesterol / asam urat + GDA & tensi, gratis, tanpa perlu login</p>
     </div>
 
+    <!-- Belum waktunya: CFD cuma berlangsung Minggu 07.00+ -->
+    <div v-if="timingLoading" class="flex justify-center py-12">
+      <div class="size-8 animate-spin rounded-full border-2 border-secondary-200 border-t-secondary-600" />
+    </div>
+
+    <div v-else-if="!timingAllowed" class="flex flex-1 flex-col items-center justify-center text-center">
+      <div class="flex size-16 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+        <Clock3 class="size-8" />
+      </div>
+      <h2 class="font-heading mt-4 text-lg font-bold text-neutral-900">Belum Waktunya Mendaftar</h2>
+      <p class="mt-2 max-w-xs text-sm text-neutral-500">
+        Pendaftaran CFD online hanya dibuka saat acara berlangsung, setiap hari Minggu mulai pukul 07.00 WIB.
+        Silakan datang langsung ke Taman Bunga, depan Gedung MPP Kabupaten Sumenep pada
+        <span class="font-semibold text-neutral-700">{{ nextAvailableAt ? formatFullDate(nextAvailableAt) : '-' }} WIB</span>.
+      </p>
+      <div v-if="countdown" class="mt-5 rounded-2xl bg-neutral-50 px-6 py-4">
+        <p class="text-xs text-neutral-400">Pendaftaran dibuka dalam</p>
+        <p class="font-heading mt-1 text-2xl font-bold tabular-nums text-secondary-600">{{ countdown }}</p>
+      </div>
+      <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
+    </div>
+
+    <!-- Step: konfirmasi (pasien sudah login, identitas sudah pasti) -->
+    <div v-else-if="step === 'konfirmasi'" class="flex flex-1 flex-col items-center justify-center text-center">
+      <AppAlert v-if="errorMessage" variant="error" class="mb-4 text-left">{{ errorMessage }}</AppAlert>
+      <div class="flex size-16 items-center justify-center rounded-full bg-secondary-50 text-secondary-600">
+        <HeartPulse class="size-8" />
+      </div>
+      <h2 class="font-heading mt-4 text-lg font-bold text-neutral-900">Halo, {{ patientName }}</h2>
+      <p class="mt-2 max-w-xs text-sm text-neutral-500">
+        Anda layak mengikuti pemeriksaan CFD hari ini. Lanjutkan pendaftaran dengan akun Anda yang sedang login?
+      </p>
+      <AppButton class="mt-6 w-full" :loading="loading" @click="step = 'pilih'">Ya, Lanjutkan</AppButton>
+      <NuxtLink to="/dashboard" class="mt-3 text-sm font-medium text-neutral-500">Batal</NuxtLink>
+    </div>
+
     <!-- Step: input NIK -->
-    <form v-if="step === 'nik'" class="space-y-4" @submit.prevent="checkNik">
+    <form v-else-if="step === 'nik'" class="space-y-4" @submit.prevent="checkNik">
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
       <AppInput
         v-model="nik" label="NIK (sesuai KTP)" inputmode="numeric" :maxlength="16"
