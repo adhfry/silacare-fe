@@ -14,6 +14,7 @@ interface CategoryStatus {
   tersedia: boolean
   tanggal_terakhir: string | null
   tanggal_boleh_lagi: string | null
+  alasan: 'sudah_cfd_hari_ini' | 'interval_28_hari' | null
 }
 interface CfdStatus {
   jadwal: { hari: string; jam: string; lokasi: string }
@@ -21,6 +22,7 @@ interface CfdStatus {
     is_layak: boolean
     kuota: { sisa: number; penuh: boolean }
     kategori: { asam_urat: CategoryStatus; cholesterol: CategoryStatus }
+    sudah_cfd_hari_ini: boolean
   }
   riwayat_terakhir: { tanggal: string; kategori: string[] } | null
 }
@@ -67,13 +69,30 @@ function formatMinggu(date: Date) {
   return `Minggu, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
 }
 
-function eligibilityText(cat: CategoryStatus): string {
+// Prefix teks status kategori -- BUKAN dipisah dari tanggalnya, supaya
+// tanggal pada kasus limit 28 hari ASLI (alasan 'interval_28_hari') bisa
+// ditebalkan + digarisbawahi secara terpisah dari kasus "sudah CFD hari ini"
+// (yang teksnya beda & tanggalnya cukup semibold saja, bukan underline --
+// itu bukan "kena limit", cuma jatah hari ini sudah dipakai).
+function eligibilityPrefix(cat: CategoryStatus): string {
   if (cat.tersedia) {
-    const today = new Date()
-    if (today.getDay() === 0) return 'bisa diperiksa sekarang'
-    return `Bisa Periksa ${formatMinggu(nextSunday(today))}`
+    return new Date().getDay() === 0 ? 'bisa diperiksa sekarang' : 'Bisa Periksa'
   }
-  return `Boleh Periksa Lagi Mulai ${formatMinggu(nextSunday(new Date(cat.tanggal_boleh_lagi!)))}`
+  return cat.alasan === 'sudah_cfd_hari_ini' ? 'Sudah periksa hari ini, boleh lagi' : 'Boleh Periksa Lagi Mulai'
+}
+
+function eligibilityDateText(cat: CategoryStatus): string {
+  if (cat.tersedia) {
+    return new Date().getDay() === 0 ? '' : formatMinggu(nextSunday(new Date()))
+  }
+  return formatMinggu(nextSunday(new Date(cat.tanggal_boleh_lagi!)))
+}
+
+// Limit 28 hari asli ditonjolkan (bold + underline) supaya beda kentara dari
+// sekadar "kembali minggu depan karena jatah hari ini sudah dipakai".
+function eligibilityDateClass(cat: CategoryStatus): string {
+  if (cat.tersedia) return ''
+  return cat.alasan === 'interval_28_hari' ? 'font-bold underline' : 'font-semibold'
 }
 
 const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', cholesterol: 'Kolesterol' }
@@ -178,10 +197,18 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           <CheckCircle2 v-if="cfdStatus.kelayakan.kategori[key].tersedia" class="size-4.5 shrink-0 text-secondary-600" />
           <Clock v-else class="size-4.5 shrink-0 text-neutral-400" />
           <p class="text-neutral-600">
-            <span class="font-medium text-neutral-800">{{ kategoriLabel[key] }}:</span>
-            {{ eligibilityText(cfdStatus.kelayakan.kategori[key]) }}
+            <span class="font-bold text-neutral-800">{{ kategoriLabel[key] }}:</span>
+            {{ eligibilityPrefix(cfdStatus.kelayakan.kategori[key]) }}
+            <span :class="eligibilityDateClass(cfdStatus.kelayakan.kategori[key])">{{ eligibilityDateText(cfdStatus.kelayakan.kategori[key]) }}</span>
           </p>
         </div>
+
+        <p class="flex items-start gap-1.5 text-xs text-neutral-400">
+          <span>Setiap kunjungan CFD otomatis termasuk cek GDA/GDP & tensi -- Anda cuma perlu pilih Asam Urat atau Kolesterol.</span>
+          <tippy content="GDA/GDP (gula darah) dan tensi (tekanan darah) selalu ikut diperiksa gratis setiap kunjungan CFD, tanpa perlu dipilih. Yang Anda pilih di sini hanya pemeriksaan tambahannya: Asam Urat atau Kolesterol (pilih salah satu per kunjungan)." trigger="mouseenter click" theme="light">
+            <CircleHelp class="size-3.5 shrink-0 cursor-pointer text-primary-500" />
+          </tippy>
+        </p>
 
         <p v-if="cfdStatus.kelayakan.kuota.penuh" class="text-xs text-neutral-400">
           Kuota hari ini sudah penuh, coba lagi di kesempatan berikutnya.
@@ -194,9 +221,19 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           </span>
         </div>
 
-        <NuxtLink to="/cfd" class="mt-1 block w-full rounded-xl bg-secondary-600 py-2.5 text-center text-sm font-semibold text-white active:scale-[0.98]">
+        <NuxtLink
+          v-if="!cfdStatus.kelayakan.sudah_cfd_hari_ini"
+          to="/cfd"
+          class="mt-1 block w-full rounded-xl bg-secondary-600 py-2.5 text-center text-sm font-semibold text-white active:scale-[0.98]"
+        >
           Daftar CFD
         </NuxtLink>
+        <button
+          v-else type="button" disabled
+          class="mt-1 block w-full cursor-not-allowed rounded-xl bg-neutral-200 py-2.5 text-center text-sm font-semibold text-neutral-500"
+        >
+          Kembali Minggu Depan
+        </button>
       </div>
     </div>
   </div>

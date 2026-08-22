@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HeartPulse, PartyPopper, Info, Clock3 } from 'lucide-vue-next'
+import { HeartPulse, PartyPopper, Info, Clock3, CircleHelp } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'guest' })
 
@@ -257,7 +257,7 @@ async function submitRegister() {
       </div>
 
       <div>
-        <p class="mb-2 text-sm font-medium text-neutral-700">Pilih pemeriksaan tambahan</p>
+        <p class="mb-2 text-sm font-bold text-neutral-700">Pilih pemeriksaan tambahan</p>
         <div class="space-y-2">
           <button
             v-if="eligibility?.kategori.asam_urat.tersedia"
@@ -265,7 +265,7 @@ async function submitRegister() {
             :class="kategori === 'asam_urat' ? 'border-secondary-500 bg-secondary-50 text-secondary-700' : 'border-neutral-200 text-neutral-600'"
             @click="kategori = 'asam_urat'"
           >
-            Asam Urat
+            <span class="font-bold">Asam Urat:</span> pemeriksaan asam urat + GDA/GDP & tensi
           </button>
           <button
             v-if="eligibility?.kategori.cholesterol.tersedia"
@@ -273,12 +273,15 @@ async function submitRegister() {
             :class="kategori === 'cholesterol' ? 'border-secondary-500 bg-secondary-50 text-secondary-700' : 'border-neutral-200 text-neutral-600'"
             @click="kategori = 'cholesterol'"
           >
-            Kolesterol
+            <span class="font-bold">Kolesterol:</span> pemeriksaan kolesterol + GDA/GDP & tensi
           </button>
         </div>
         <p class="mt-2 flex items-start gap-1.5 text-xs text-neutral-400">
           <Info class="size-3.5 mt-0.5 shrink-0" />
-          GDA/GDP dan tekanan darah (tensi) otomatis disertakan.
+          <span>GDA/GDP dan tekanan darah (tensi) otomatis disertakan di setiap kunjungan CFD.</span>
+          <tippy content="GDA/GDP (gula darah) dan tensi (tekanan darah) selalu ikut diperiksa gratis setiap kunjungan CFD, tanpa perlu dipilih. Anda hanya perlu memilih pemeriksaan tambahannya: Asam Urat atau Kolesterol (pilih salah satu per kunjungan)." trigger="mouseenter click" theme="light">
+            <CircleHelp class="size-3.5 shrink-0 cursor-pointer text-primary-500" />
+          </tippy>
         </p>
       </div>
 
@@ -314,6 +317,10 @@ async function submitRegister() {
     <div v-else-if="step === 'tidak_layak'" class="flex flex-1 flex-col items-center justify-center text-center">
       <AppAlert variant="info" class="text-left">
         <span v-if="eligibility?.kuota.penuh">Kuota CFD hari ini sudah penuh, silakan datang di kesempatan berikutnya.</span>
+        <span v-else-if="eligibility?.sudah_cfd_hari_ini">
+          Anda sudah mengikuti pemeriksaan CFD hari ini. Satu kunjungan CFD hanya untuk satu pemeriksaan
+          (Asam Urat atau Kolesterol) -- silakan kembali hari Minggu berikutnya.
+        </span>
         <span v-else>
           Anda belum bisa mengikuti pemeriksaan asam urat maupun kolesterol saat ini
           (jeda minimal 4 minggu antar pemeriksaan yang sama).
