@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LogOut, MapPin, Phone, Fingerprint, Eye, EyeOff } from 'lucide-vue-next'
+import { LogOut, MapPin, Phone, Fingerprint, Eye, EyeOff, UserPen, ChevronRight } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -64,6 +64,33 @@ function logout() {
           </div>
         </div>
       </div>
+
+      <div v-if="auth.profile?.completeness" class="mt-4 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-medium text-neutral-700">Kelengkapan Data</span>
+          <span class="font-semibold text-primary-600">{{ auth.profile.completeness.percent }}%</span>
+        </div>
+        <div class="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
+          <div
+            class="h-full rounded-full bg-primary-500 transition-all"
+            :style="{ width: `${auth.profile.completeness.percent}%` }"
+          />
+        </div>
+      </div>
+
+      <NuxtLink
+        to="/dashboard/akun/update-data"
+        class="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60"
+      >
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+          <UserPen class="size-4.5" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-neutral-800">Update Informasi Pasien</p>
+          <p class="text-xs text-neutral-400">Ajukan koreksi/pelengkapan data diri</p>
+        </div>
+        <ChevronRight class="size-4 shrink-0 text-neutral-300" />
+      </NuxtLink>
 
       <button
         class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-100 py-3.5 text-[15px] font-semibold text-red-600"

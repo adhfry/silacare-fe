@@ -6,6 +6,7 @@ interface PatientProfile {
   phone: string
   phone_verified: boolean
   last_login_at: string | null
+  completeness: { percent: number; missing_fields: string[] } | null
   patient: {
     no_reg: string
     name: string
@@ -14,9 +15,21 @@ interface PatientProfile {
     gender: 'L' | 'P'
     tempat_lahir: string
     tgl_lahir: string
+    golongan_darah: string | null
+    agama: string | null
+    status_perkawinan: string | null
+    pekerjaan: string | null
+    phone: string | null
+    email: string | null
+    fktp: string | null
     alamat: string
+    rt_rw: string | null
     kel_desa: string | null
     kecamatan: string | null
+    is_bpjs: boolean
+    no_bpjs: string | null
+    is_perokok: boolean
+    jenis_perokok: string | null
   }
 }
 
