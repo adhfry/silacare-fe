@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
+import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, ScanLine, CircleHelp, CheckCircle2, Bell, XCircle } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -17,6 +17,8 @@ interface QueueItem {
   status: string
   dibatalkan: boolean
   dibatalkan_at: string | null
+  ditolak: boolean
+  ditolak_alasan: string | null
   can_cancel: boolean
   revisi_count: number
   revisi_sisa: number
@@ -25,6 +27,8 @@ interface QueueItem {
   qr_expired: boolean
   qr_image: string | null
   sudah_diverifikasi: boolean
+  can_follow_up: boolean
+  follow_up_next_at: string | null
   layanan: QueueLayanan[]
   pembayaran: { total_biaya: string | null; status: string }
 }
@@ -147,6 +151,49 @@ async function onQrDetected(code: string) {
     await loadQueues()
   } catch (err) {
     errorMessage.value = err instanceof ApiError ? err.message : 'Gagal memverifikasi QR'
+  }
+}
+
+// Follow up "saya sudah tiba" -- notice tambahan ke SELURUH petugas (sfx +
+// toast di SiLAKES), BUKAN pengganti QR check-in. Cooldown 5 menit dicek
+// server-side (PatientFollowUpService), di sini cuma menghitung mundur
+// tampilannya dari follow_up_next_at yang dikirim backend.
+const followUpCountdown = ref<Record<number, string>>({})
+const followUpSubmitting = ref<number | null>(null)
+let followUpTimer: ReturnType<typeof setInterval> | undefined
+
+function tickFollowUpCountdowns() {
+  const now = Date.now()
+  const next: Record<number, string> = {}
+  for (const q of queues.value) {
+    if (!q.follow_up_next_at) continue
+    const remainMs = new Date(q.follow_up_next_at).getTime() - now
+    if (remainMs > 0) {
+      const totalSec = Math.ceil(remainMs / 1000)
+      next[q.id] = `${Math.floor(totalSec / 60)}:${(totalSec % 60).toString().padStart(2, '0')}`
+    }
+  }
+  followUpCountdown.value = next
+}
+
+async function sendFollowUp(q: QueueItem) {
+  if (followUpCountdown.value[q.id] || followUpSubmitting.value === q.id) return
+  followUpSubmitting.value = q.id
+  try {
+    const data = await api.post<{ next_available_at: string }>(`/patient-portal/queues/${q.id}/follow-up`, {})
+    q.follow_up_next_at = data.next_available_at
+    successMessage.value = 'Petugas telah diberi tahu bahwa Anda sudah tiba.'
+  } catch (err) {
+    if (err instanceof ApiError) {
+      const nextAt = err.fieldErrors && 'next_available_at' in err.fieldErrors ? (err.fieldErrors as any).next_available_at : null
+      if (nextAt) q.follow_up_next_at = nextAt
+      errorMessage.value = err.message
+    } else {
+      errorMessage.value = 'Gagal memberi tahu petugas, coba lagi'
+    }
+  } finally {
+    followUpSubmitting.value = null
+    tickFollowUpCountdowns()
   }
 }
 
@@ -373,6 +420,12 @@ const paymentStatusLabel: Record<string, string> = { WAITING_PAYMENT: 'Menunggu 
 onMounted(async () => {
   await Promise.all([loadQueues(), loadQuota()])
   if (route.query.booking === '1') openForm()
+  tickFollowUpCountdowns()
+  followUpTimer = setInterval(tickFollowUpCountdowns, 1000)
+})
+
+onBeforeUnmount(() => {
+  clearInterval(followUpTimer)
 })
 </script>
 
@@ -577,12 +630,22 @@ onMounted(async () => {
                 Dibatalkan
               </span>
               <span
+                v-else-if="q.ditolak"
+                class="shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-600"
+              >
+                Ditolak Petugas
+              </span>
+              <span
                 v-else
                 class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                 :class="q.pembayaran.status === 'PAID' ? 'bg-secondary-100 text-secondary-700' : 'bg-amber-100 text-amber-700'"
               >
                 {{ paymentStatusLabel[q.pembayaran.status] || q.pembayaran.status }}
               </span>
+            </div>
+
+            <div v-if="q.ditolak && q.ditolak_alasan" class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+              Alasan: {{ q.ditolak_alasan }}
             </div>
 
             <div v-if="q.layanan.length" class="mt-2 border-t border-neutral-100 pt-2">
@@ -604,6 +667,22 @@ onMounted(async () => {
             <div v-if="q.sudah_diverifikasi" class="mt-3 flex items-center gap-2.5 rounded-xl border-t border-neutral-100 bg-secondary-50 p-4 pt-4">
               <CheckCircle2 class="size-4.5 shrink-0 text-secondary-600" />
               <p class="text-xs font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
+            </div>
+
+            <!-- Follow up "saya sudah tiba" -- notice tambahan ke petugas (bunyi
+                 + toast di SiLAKES), BUKAN pengganti QR check-in. Cooldown 5
+                 menit ditampilkan sebagai countdown realtime di tombolnya. -->
+            <div v-if="q.can_follow_up" class="mt-3 border-t border-neutral-100 pt-3">
+              <button
+                type="button"
+                class="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-primary-100 py-2.5 text-xs font-semibold text-primary-600 disabled:opacity-50"
+                :disabled="!!followUpCountdown[q.id] || followUpSubmitting === q.id"
+                @click="sendFollowUp(q)"
+              >
+                <Bell class="size-3.5" />
+                <template v-if="followUpCountdown[q.id]">Sudah diberi tahu · {{ followUpCountdown[q.id] }}</template>
+                <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
+              </button>
             </div>
 
             <!-- QR check-in: tunjukkan ke petugas di loket pendaftaran saat

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, FileWarning, QrCode, Clock3, ScanLine, CircleHelp, CheckCircle2 } from 'lucide-vue-next'
+import { Download, FileWarning, QrCode, Clock3, ScanLine, CircleHelp, CheckCircle2, Bell } from 'lucide-vue-next'
 import { isAbnormalResult } from '~/utils/resultStatus'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
@@ -37,6 +37,11 @@ interface ResultDetail {
   qr_expired: boolean
   qr_image: string | null
   sudah_diverifikasi: boolean
+  dibatalkan: boolean
+  ditolak: boolean
+  ditolak_alasan: string | null
+  can_follow_up: boolean
+  follow_up_next_at: string | null
   layanan: LayananItem[]
   biaya: Biaya
   items: ResultItem[]
@@ -66,6 +71,44 @@ async function onQrDetected(code: string) {
   }
 }
 
+// Follow up "saya sudah tiba" -- notice tambahan ke petugas, BUKAN pengganti
+// QR check-in. Sama seperti halaman Antrean.
+const followUpCountdownText = ref('')
+const followUpSubmitting = ref(false)
+let followUpTimer: ReturnType<typeof setInterval> | undefined
+
+function tickFollowUpCountdown() {
+  if (!detail.value?.follow_up_next_at) {
+    followUpCountdownText.value = ''
+    return
+  }
+  const remainMs = new Date(detail.value.follow_up_next_at).getTime() - Date.now()
+  if (remainMs <= 0) {
+    followUpCountdownText.value = ''
+    return
+  }
+  const totalSec = Math.ceil(remainMs / 1000)
+  followUpCountdownText.value = `${Math.floor(totalSec / 60)}:${(totalSec % 60).toString().padStart(2, '0')}`
+}
+
+async function sendFollowUp() {
+  if (!detail.value || followUpCountdownText.value || followUpSubmitting.value) return
+  followUpSubmitting.value = true
+  try {
+    const data = await api.post<{ next_available_at: string }>(`/patient-portal/queues/${detail.value.id}/follow-up`, {})
+    detail.value.follow_up_next_at = data.next_available_at
+  } catch (err) {
+    if (err instanceof ApiError) {
+      const nextAt = err.fieldErrors && 'next_available_at' in err.fieldErrors ? (err.fieldErrors as any).next_available_at : null
+      if (nextAt && detail.value) detail.value.follow_up_next_at = nextAt
+      errorMessage.value = err.message
+    }
+  } finally {
+    followUpSubmitting.value = false
+    tickFollowUpCountdown()
+  }
+}
+
 onMounted(async () => {
   try {
     detail.value = await api.get(`/patient-portal/history/${route.params.id}`)
@@ -77,6 +120,12 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  tickFollowUpCountdown()
+  followUpTimer = setInterval(tickFollowUpCountdown, 1000)
+})
+
+onBeforeUnmount(() => {
+  clearInterval(followUpTimer)
 })
 
 function formatDate(value: string | null) {
@@ -184,11 +233,31 @@ function isAbnormal(item: ResultItem): boolean {
           <p class="mt-1 text-xs text-secondary-600">orang, diperbarui otomatis</p>
         </div>
 
+        <!-- Ditolak petugas -->
+        <div v-if="detail.ditolak" class="mt-3 rounded-2xl bg-red-50 p-4 shadow-sm shadow-neutral-200/60">
+          <p class="text-sm font-semibold text-red-600">Pendaftaran online ini ditolak petugas.</p>
+          <p v-if="detail.ditolak_alasan" class="mt-1 text-xs text-red-500">Alasan: {{ detail.ditolak_alasan }}</p>
+        </div>
+
         <!-- Sudah check-in (via QR pribadi discan petugas ATAU fallback QR
              admin discan sendiri). -->
         <div v-if="detail.sudah_diverifikasi" class="mt-3 flex items-center gap-3 rounded-2xl bg-secondary-50 p-4 shadow-sm shadow-neutral-200/60">
           <CheckCircle2 class="size-5 shrink-0 text-secondary-600" />
           <p class="text-sm font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
+        </div>
+
+        <!-- Follow up "saya sudah tiba" -->
+        <div v-if="detail.can_follow_up" class="mt-3">
+          <button
+            type="button"
+            class="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-primary-100 bg-white py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-neutral-200/60 disabled:opacity-50"
+            :disabled="!!followUpCountdownText || followUpSubmitting"
+            @click="sendFollowUp"
+          >
+            <Bell class="size-4" />
+            <template v-if="followUpCountdownText">Sudah diberi tahu · {{ followUpCountdownText }}</template>
+            <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
+          </button>
         </div>
 
         <!-- QR check-in: cuma untuk kunjungan online non-CFD (CFD punya worklist
