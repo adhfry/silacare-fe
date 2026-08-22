@@ -137,16 +137,13 @@ async function submit() {
         <AppInput v-model="form.phone" label="Nomor HP" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" />
         <AppInput v-model="form.email" label="Email" type="email" placeholder="nama@email.com" />
 
-        <label class="block">
+        <div>
           <span class="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-neutral-700">
             FKTP
             <InfoTip text="FKTP (Fasilitas Kesehatan Tingkat Pertama) adalah puskesmas, klinik, atau dokter keluarga yang terdaftar sebagai rujukan pertama di kartu BPJS Kesehatan Anda." />
           </span>
-          <input
-            v-model="form.fktp" type="text" placeholder="Contoh: Puskesmas Kalianget"
-            class="w-full rounded-xl border-2 border-neutral-200 bg-white px-4 py-3 text-[15px] outline-none focus:border-primary-500"
-          >
-        </label>
+          <FktpPicker v-model="form.fktp" />
+        </div>
 
         <AppInput v-model="form.alamat" label="Alamat (sesuai KTP)" placeholder="Nama jalan, nomor rumah" />
         <WilayahPicker v-model:kecamatan="form.kecamatan" v-model:kel-desa="form.kel_desa" />

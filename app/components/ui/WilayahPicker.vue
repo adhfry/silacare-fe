@@ -35,6 +35,49 @@ let villageTimer: ReturnType<typeof setTimeout> | undefined
 watch(kecamatan, (val) => { if (val !== districtQuery.value) districtQuery.value = val }, { immediate: true })
 watch(kelDesa, (val) => { if (val !== villageQuery.value) villageQuery.value = val }, { immediate: true })
 
+interface ResolveResult { code: string; name: string; district_code?: string; district_name?: string; confidence: number }
+
+// Data pasien lama sering berisi variasi penulisan ("Kec. Kota Sumenep",
+// "Kecamatan Kota Sumenep", dst.) -- begitu komponen ini dibuka dengan nilai
+// awal (edit data existing), cocokkan ke entri wilayah resmi lewat resolver
+// similarity, supaya langsung "ketemu" (dan selectedDistrictCode terisi,
+// supaya pencarian kelurahan/desa berikutnya ikut ter-scope dengan benar)
+// alih-alih dianggap teks bebas yang tidak dikenal.
+onMounted(async () => {
+  if (kecamatan.value.trim().length >= 3) {
+    try {
+      const hit = await api.get<ResolveResult | null>(`/patient-portal/wilayah/districts/resolve?q=${encodeURIComponent(kecamatan.value.trim())}`)
+      if (hit) {
+        districtQuery.value = hit.name
+        kecamatan.value = hit.name
+        selectedDistrictCode.value = hit.code
+      }
+    } catch {
+      // Resolver gagal (jaringan, dsb.) -- biarkan nilai asli apa adanya,
+      // tetap bisa diedit manual seperti biasa.
+    }
+  }
+
+  if (kelDesa.value.trim().length >= 3) {
+    try {
+      const params = new URLSearchParams({ q: kelDesa.value.trim() })
+      if (selectedDistrictCode.value) params.set('district_code', selectedDistrictCode.value)
+      const hit = await api.get<ResolveResult | null>(`/patient-portal/wilayah/villages/resolve?${params.toString()}`)
+      if (hit) {
+        villageQuery.value = hit.name
+        kelDesa.value = hit.name
+        if (!selectedDistrictCode.value && hit.district_code && hit.district_name) {
+          selectedDistrictCode.value = hit.district_code
+          districtQuery.value = hit.district_name
+          kecamatan.value = hit.district_name
+        }
+      }
+    } catch {
+      // sama seperti di atas -- biarkan apa adanya kalau gagal.
+    }
+  }
+})
+
 function onDistrictInput() {
   kecamatan.value = districtQuery.value
   selectedDistrictCode.value = null
