@@ -5,6 +5,11 @@ import { parseNik } from '~/utils/nik'
 
 definePageMeta({ layout: 'guest' })
 
+usePageSeo({
+  title: 'Daftar Pasien Baru — Car Free Day',
+  description: 'Daftar sebagai pasien baru untuk mengikuti pemeriksaan gratis Car Free Day UPTD Labkesda Kabupaten Sumenep.',
+})
+
 const api = useApi()
 const router = useRouter()
 const flow = useCfdFlow()

@@ -3,6 +3,11 @@ import { HeartPulse, PartyPopper, Info, Clock3 } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'guest' })
 
+usePageSeo({
+  title: 'Pemeriksaan Gratis Car Free Day',
+  description: 'Daftar pemeriksaan kesehatan gratis (cek kolesterol, asam urat, GDA/GDP, tensi) di Car Free Day UPTD Labkesda Kabupaten Sumenep, setiap hari Minggu, tanpa perlu login.',
+})
+
 const api = useApi()
 const router = useRouter()
 const flow = useCfdFlow()

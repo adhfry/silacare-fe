@@ -4,6 +4,10 @@ import { UserPen } from 'lucide-vue-next'
 const auth = useAuthStore()
 const router = useRouter()
 
+// Seluruh halaman dashboard berisi data pribadi pasien (riwayat pemeriksaan,
+// NIK, dll) -- WAJIB tidak pernah ter-index mesin pencari.
+useSeoMeta({ robots: 'noindex, nofollow' })
+
 // Muncul SEKALI per sesi login (bukan di setiap perpindahan halaman dashboard,
 // yang akan sangat mengganggu) -- ditandai lewat sessionStorage supaya reset
 // otomatis kalau tab ditutup/browser dibuka lagi, konsisten dengan "setiap dia

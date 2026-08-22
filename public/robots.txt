@@ -1,2 +1,6 @@
-User-Agent: *
-Disallow:
+User-agent: *
+Allow: /
+# Halaman dashboard berisi data pribadi pasien -- jangan pernah diindeks.
+Disallow: /dashboard/
+
+Sitemap: https://silacare.labkesdasumenep.id/sitemap.xml

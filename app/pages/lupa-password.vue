@@ -3,6 +3,11 @@ import { KeyRound } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
+usePageSeo({
+  title: 'Lupa Kata Sandi',
+  description: 'Atur ulang kata sandi akun SiLACARE Anda dengan verifikasi NIK dan nomor HP terdaftar.',
+})
+
 const api = useApi()
 const auth = useAuthStore()
 const router = useRouter()

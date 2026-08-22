@@ -1,6 +1,11 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
+usePageSeo({
+  title: 'Masuk',
+  description: 'Masuk ke akun SiLACARE menggunakan nomor HP terdaftar Anda untuk melihat riwayat pemeriksaan dan antrean online.',
+})
+
 const api = useApi()
 const auth = useAuthStore()
 const route = useRoute()

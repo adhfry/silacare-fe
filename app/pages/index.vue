@@ -3,6 +3,35 @@ import { FileText, CalendarClock, HeartPulse, ArrowRight, UserPlus } from 'lucid
 
 definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
+usePageSeo({
+  title: 'Portal Digital Pasien Labkesda Sumenep',
+  description: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat & hasil pemeriksaan lab, antre online tanpa perlu datang lebih awal, dan daftar pemeriksaan gratis di Car Free Day.',
+})
+
+// Data terstruktur schema.org supaya Google bisa menampilkan SiLACARE
+// sebagai layanan kesehatan resmi di hasil pencarian.
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'MedicalOrganization',
+        name: 'UPTD Laboratorium Kesehatan Daerah (Labkesda) Kabupaten Sumenep',
+        alternateName: 'SiLACARE',
+        description: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep untuk riwayat pemeriksaan, antrean online, dan pemeriksaan gratis Car Free Day.',
+        areaServed: { '@type': 'City', name: 'Sumenep' },
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Sumenep',
+          addressRegion: 'Jawa Timur',
+          addressCountry: 'ID',
+        },
+      }),
+    },
+  ],
+})
+
 const features = [
   { icon: FileText, text: 'Lihat riwayat & hasil pemeriksaan lab kapan saja' },
   { icon: CalendarClock, text: 'Antre online, bayar tunai langsung di lokasi' },

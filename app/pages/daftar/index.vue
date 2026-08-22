@@ -4,6 +4,11 @@ import { parseNik } from '~/utils/nik'
 
 definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
+usePageSeo({
+  title: 'Daftar Akun',
+  description: 'Buat akun SiLACARE untuk mengakses riwayat pemeriksaan lab dan antrean online di UPTD Labkesda Kabupaten Sumenep.',
+})
+
 const api = useApi()
 const auth = useAuthStore()
 const router = useRouter()

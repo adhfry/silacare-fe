@@ -4,6 +4,11 @@
 // di sisi client supaya tautan/bookmark lama tetap berfungsi.
 definePageMeta({ layout: 'guest' })
 
+usePageSeo({
+  title: 'Aktivasi Akun',
+  description: 'Aktifkan akun SiLACARE Anda untuk mulai mengakses riwayat pemeriksaan lab dan antrean online.',
+})
+
 await navigateTo('/daftar', { replace: true })
 </script>
 

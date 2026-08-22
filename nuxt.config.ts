@@ -5,7 +5,41 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@pinia/nuxt', '@vueuse/nuxt', '@nuxt/fonts'],
+  modules: ['@pinia/nuxt', '@vueuse/nuxt', '@nuxt/fonts', '@vite-pwa/nuxt'],
+
+  // Aplikasi bisa di-install (Add to Home Screen) di HP pasien -- ikon &
+  // manifest digenerate dari public/pwa/*.png (lihat public/logo/silacare-logo.png
+  // sebagai sumber). registerType 'autoUpdate' supaya versi baru otomatis
+  // terpasang tanpa pasien perlu uninstall-install manual.
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'SiLACARE — Portal Pasien Labkesda Sumenep',
+      short_name: 'SiLACARE',
+      description: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
+      lang: 'id',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      theme_color: '#0C79D4',
+      background_color: '#F8FAFC',
+      icons: [
+        { src: '/pwa/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/pwa/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/pwa/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+        { src: '/pwa/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+    workbox: {
+      // Halaman dashboard berisi data pribadi pasien -- JANGAN pernah
+      // disimpan ke cache offline service worker.
+      navigateFallbackDenylist: [/^\/dashboard/],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    client: {
+      installPrompt: true,
+    },
+  },
 
   css: ['~/assets/css/main.css'],
 
@@ -41,6 +75,30 @@ export default defineNuxtConfig({
           name: 'description',
           content: 'SiLACARE — Portal Digital Pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
         },
+        // Open Graph & Twitter Card default -- dioverride per halaman lewat
+        // useSeoMeta() kalau perlu judul/deskripsi yang lebih spesifik.
+        { property: 'og:site_name', content: 'SiLACARE' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:locale', content: 'id_ID' },
+        { property: 'og:title', content: 'SiLACARE — Portal Pasien Labkesda Sumenep' },
+        {
+          property: 'og:description',
+          content: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
+        },
+        { property: 'og:image', content: '/og-image.png' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'SiLACARE — Portal Pasien Labkesda Sumenep' },
+        {
+          name: 'twitter:description',
+          content: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
+        },
+        { name: 'twitter:image', content: '/og-image.png' },
+      ],
+      link: [
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/pwa/icon-180.png' },
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/pwa/icon-192.png' },
       ],
     },
   },
@@ -48,6 +106,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.silakes.labkesdasumenep.id/api',
+      // Dipakai untuk canonical URL & og:url absolut -- ganti lewat env
+      // NUXT_PUBLIC_SITE_URL begitu domain produksi SiLACARE sudah aktif.
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://silacare.labkesdasumenep.id',
     },
   },
 })
