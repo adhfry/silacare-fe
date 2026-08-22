@@ -246,20 +246,6 @@ function isAbnormal(item: ResultItem): boolean {
           <p class="text-sm font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
         </div>
 
-        <!-- Follow up "saya sudah tiba" -->
-        <div v-if="detail.can_follow_up" class="mt-3">
-          <button
-            type="button"
-            class="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-primary-100 bg-white py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-neutral-200/60 disabled:opacity-50"
-            :disabled="!!followUpCountdownText || followUpSubmitting"
-            @click="sendFollowUp"
-          >
-            <Bell class="size-4" />
-            <template v-if="followUpCountdownText">Sudah diberi tahu · {{ followUpCountdownText }}</template>
-            <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
-          </button>
-        </div>
-
         <!-- QR check-in: cuma untuk kunjungan online non-CFD (CFD punya worklist
              realtime sendiri, tidak perlu scan). Blur+Expired kalau sudah lewat
              masa berlaku, supaya tidak bisa dipakai check-in dua kali. -->
@@ -296,6 +282,22 @@ function isAbnormal(item: ResultItem): boolean {
           <div class="absolute inset-0 flex items-center justify-center bg-white/50">
             <span class="rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-bold uppercase tracking-wide text-white">Expired</span>
           </div>
+        </div>
+
+        <!-- Follow up "saya sudah tiba" -- blok terpisah dari QR di atas,
+             keduanya SAMA-SAMA tampil sekaligus, bukan alternatif satu sama
+             lain. -->
+        <div v-if="detail.can_follow_up" class="mt-3">
+          <button
+            type="button"
+            class="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-primary-100 bg-white py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-neutral-200/60 disabled:opacity-50"
+            :disabled="!!followUpCountdownText || followUpSubmitting"
+            @click="sendFollowUp"
+          >
+            <Bell class="size-4" />
+            <template v-if="followUpCountdownText">Sudah diberi tahu · {{ followUpCountdownText }}</template>
+            <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
+          </button>
         </div>
 
         <div v-if="!detail.is_ready" class="mt-4 flex items-center gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">

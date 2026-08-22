@@ -673,22 +673,6 @@ onBeforeUnmount(() => {
               <p class="text-xs font-medium text-secondary-700">Kedatangan Anda telah diverifikasi, menunggu hasil pemeriksaan.</p>
             </div>
 
-            <!-- Follow up "saya sudah tiba" -- notice tambahan ke petugas (bunyi
-                 + toast di SiLAKES), BUKAN pengganti QR check-in. Cooldown 5
-                 menit ditampilkan sebagai countdown realtime di tombolnya. -->
-            <div v-if="q.can_follow_up" class="mt-3 border-t border-neutral-100 pt-3">
-              <button
-                type="button"
-                class="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-primary-100 py-2.5 text-xs font-semibold text-primary-600 disabled:opacity-50"
-                :disabled="!!followUpCountdown[q.id] || followUpSubmitting === q.id"
-                @click="sendFollowUp(q)"
-              >
-                <Bell class="size-3.5" />
-                <template v-if="followUpCountdown[q.id]">Sudah diberi tahu · {{ followUpCountdown[q.id] }}</template>
-                <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
-              </button>
-            </div>
-
             <!-- QR check-in: tunjukkan ke petugas di loket pendaftaran saat
                  datang -- petugas scan, seluruh layanan yang dipesan otomatis
                  terisi. Blur+Expired kalau sudah tidak berlaku (hasil sudah
@@ -725,6 +709,24 @@ onBeforeUnmount(() => {
               <div class="absolute inset-0 flex items-center justify-center">
                 <span class="rounded-full bg-neutral-800 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Expired</span>
               </div>
+            </div>
+
+            <!-- Follow up "saya sudah tiba" -- notice tambahan ke petugas (bunyi
+                 + toast di SiLAKES), BUKAN pengganti QR check-in (blok terpisah
+                 dari QR di atas, keduanya SAMA-SAMA tampil sekaligus, bukan
+                 alternatif satu sama lain). Cooldown 5 menit ditampilkan
+                 sebagai countdown realtime di tombolnya. -->
+            <div v-if="q.can_follow_up" class="mt-3 border-t border-neutral-100 pt-3">
+              <button
+                type="button"
+                class="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-primary-100 py-2.5 text-xs font-semibold text-primary-600 disabled:opacity-50"
+                :disabled="!!followUpCountdown[q.id] || followUpSubmitting === q.id"
+                @click="sendFollowUp(q)"
+              >
+                <Bell class="size-3.5" />
+                <template v-if="followUpCountdown[q.id]">Sudah diberi tahu · {{ followUpCountdown[q.id] }}</template>
+                <template v-else>Saya Sudah Tiba, Beri Tahu Petugas</template>
+              </button>
             </div>
 
             <div v-if="q.can_cancel || q.can_revise" class="mt-3 flex gap-2 border-t border-neutral-100 pt-3">
