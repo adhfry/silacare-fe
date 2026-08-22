@@ -6,7 +6,7 @@ definePageMeta({ layout: 'guest' })
 const features = [
   { icon: FileText, text: 'Lihat riwayat & hasil pemeriksaan lab kapan saja' },
   { icon: CalendarClock, text: 'Antre online, bayar tunai langsung di lokasi' },
-  { icon: HeartPulse, text: 'Daftar Car Free Day gratis tanpa perlu login' },
+  { icon: HeartPulse, text: 'Pemeriksaan Gratis di Car Free Day, tanpa perlu login' },
 ]
 </script>
 
@@ -48,7 +48,7 @@ const features = [
       </NuxtLink>
       <NuxtLink to="/cfd" class="block">
         <AppButton variant="secondary" class="w-full">
-          Daftar CFD Gratis
+          Daftar Pemeriksaan Gratis CFD
           <ArrowRight class="size-4" />
         </AppButton>
       </NuxtLink>

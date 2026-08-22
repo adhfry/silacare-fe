@@ -40,6 +40,31 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+// CFD cuma berlangsung hari Minggu -- "tersedia" dari backend cuma berarti
+// jeda 28 hari sudah lewat, BUKAN berarti bisa periksa hari ini juga kalau
+// hari ini bukan Minggu. Baris ini cari tanggal Minggu berikutnya (atau hari
+// ini kalau kebetulan hari ini Minggu) dari sebuah tanggal acuan.
+function nextSunday(from: Date): Date {
+  const d = new Date(from)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay() // 0 = Minggu
+  if (day !== 0) d.setDate(d.getDate() + (7 - day))
+  return d
+}
+
+function formatMinggu(date: Date) {
+  return `Minggu, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+}
+
+function eligibilityText(cat: CategoryStatus): string {
+  if (cat.tersedia) {
+    const today = new Date()
+    if (today.getDay() === 0) return 'bisa diperiksa sekarang'
+    return `Bisa Periksa ${formatMinggu(nextSunday(today))}`
+  }
+  return `Boleh Periksa Lagi Mulai ${formatMinggu(nextSunday(new Date(cat.tanggal_boleh_lagi!)))}`
+}
+
 const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', cholesterol: 'Kolesterol' }
 </script>
 
@@ -111,7 +136,7 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           <HeartPulse class="size-4.5" />
         </div>
         <div>
-          <p class="text-sm font-semibold text-secondary-800">Car Free Day Gratis</p>
+          <p class="text-sm font-semibold text-secondary-800">Pemeriksaan Gratis di Car Free Day</p>
           <p class="flex items-center gap-1 text-xs text-secondary-600">
             <MapPin class="size-3" /> Setiap {{ cfdStatus.jadwal.hari }}, {{ cfdStatus.jadwal.jam }} — {{ cfdStatus.jadwal.lokasi }}
           </p>
@@ -124,8 +149,7 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           <Clock v-else class="size-4.5 shrink-0 text-neutral-400" />
           <p class="text-neutral-600">
             <span class="font-medium text-neutral-800">{{ kategoriLabel[key] }}:</span>
-            <span v-if="cfdStatus.kelayakan.kategori[key].tersedia"> bisa diperiksa sekarang</span>
-            <span v-else> boleh diperiksa lagi mulai {{ formatDate(cfdStatus.kelayakan.kategori[key].tanggal_boleh_lagi!) }}</span>
+            {{ eligibilityText(cfdStatus.kelayakan.kategori[key]) }}
           </p>
         </div>
 
