@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, ChevronRight, CheckCircle2, Clock } from 'lucide-vue-next'
+import { FileText, ChevronRight, CheckCircle2, Clock, QrCode } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -9,9 +9,12 @@ interface HistoryItem {
   id: number
   tanggal: string | null
   jenis: string
+  antrian_ke: number | null
   status: string
   status_konfirmasi: string | null
   is_ready: boolean
+  qr_available: boolean
+  qr_expired: boolean
 }
 
 const items = ref<HistoryItem[]>([])
@@ -74,8 +77,13 @@ function formatDate(value: string | null) {
             <Clock v-else class="size-5" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold text-neutral-800">{{ jenisLabel[item.jenis] || item.jenis }}</p>
-            <p class="text-xs text-neutral-400">{{ formatDate(item.tanggal) }}</p>
+            <p class="flex items-center gap-1.5 truncate text-sm font-semibold text-neutral-800">
+              {{ jenisLabel[item.jenis] || item.jenis }}
+              <QrCode v-if="item.qr_available" class="size-3.5 shrink-0 text-primary-500" />
+            </p>
+            <p class="text-xs text-neutral-400">
+              {{ formatDate(item.tanggal) }}<span v-if="item.antrian_ke"> · Antrean #{{ item.antrian_ke }}</span>
+            </p>
           </div>
           <span
             class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"

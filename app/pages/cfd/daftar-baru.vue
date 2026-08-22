@@ -154,6 +154,10 @@ const kategori = ref<'asam_urat' | 'cholesterol' | ''>('')
 const submitting = ref(false)
 const antrianKe = ref<number | null>(null)
 const noReg = ref('')
+const suratHasilLabId = ref<number | null>(null)
+
+const { status: queueStatus, start: startQueuePolling } = useCfdQueueStatus(suratHasilLabId)
+const { getCurrentPosition } = useGeolocation()
 
 async function submitRegisterNew() {
   errorMessage.value = ''
@@ -164,6 +168,9 @@ async function submitRegisterNew() {
 
   submitting.value = true
   try {
+    // Wajib berada di lokasi CFD (radius 400m) -- dicek ulang di backend.
+    const { latitude, longitude } = await getCurrentPosition()
+
     const data = await api.post<any>('/cfd/register-new', {
       nik: flow.value.nik,
       name: form.name,
@@ -179,12 +186,16 @@ async function submitRegisterNew() {
       ocr_result: ocrResult.value,
       kondisi_puasa: kondisiPuasa.value === 'ya',
       kategori_opsional: kategori.value,
+      latitude,
+      longitude,
     })
     antrianKe.value = data.antrian_ke
     noReg.value = data.no_reg
+    suratHasilLabId.value = data.surat_hasil_lab_id
+    startQueuePolling()
     step.value = 'sukses'
   } catch (err) {
-    errorMessage.value = err instanceof ApiError ? err.message : 'Gagal mendaftar'
+    errorMessage.value = err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Gagal mendaftar'
   } finally {
     submitting.value = false
   }
@@ -346,6 +357,17 @@ async function submitRegisterNew() {
       <p class="mt-4 max-w-xs text-sm text-neutral-500">
         Silakan tunjukkan nomor ini kepada petugas di lokasi CFD. Simpan nomor registrasi Anda untuk aktivasi akun SiLACARE nanti.
       </p>
+
+      <div v-if="queueStatus" class="mt-5 rounded-2xl bg-neutral-50 px-6 py-4">
+        <p class="text-xs text-neutral-400">Sisa antrean di depan Anda</p>
+        <p class="font-heading mt-1 text-3xl font-bold tabular-nums text-primary-600">
+          {{ queueStatus.status === 'pending' ? queueStatus.sisa_di_depan : 0 }}
+        </p>
+        <p class="mt-1 text-xs text-neutral-400">
+          {{ queueStatus.status !== 'pending' ? 'Giliran Anda sudah diproses' : 'orang, diperbarui otomatis' }}
+        </p>
+      </div>
+
       <NuxtLink to="/" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
   </div>

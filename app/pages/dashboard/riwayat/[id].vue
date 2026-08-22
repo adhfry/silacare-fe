@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, FileWarning } from 'lucide-vue-next'
+import { Download, FileWarning, QrCode, Copy, Check } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -26,11 +26,16 @@ interface ResultDetail {
   tanggal: string | null
   jam: string | null
   jenis_spesimen: string | null
+  antrian_ke: number | null
+  is_kunjungan_cfd: boolean
   status: string
   status_konfirmasi: string | null
   is_ready: boolean
   pdf_link: string | null
   kesimpulan: string | null
+  qr_expired: boolean
+  qr_image: string | null
+  qr_text: string | null
   layanan: LayananItem[]
   biaya: Biaya
   items: ResultItem[]
@@ -42,10 +47,24 @@ const api = useApi()
 const detail = ref<ResultDetail | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
+const copied = ref(false)
+
+const suratHasilLabId = computed(() => detail.value?.id ?? null)
+const { status: queueStatus, start: startQueuePolling } = useCfdQueueStatus(suratHasilLabId)
+
+function copyQrText() {
+  if (!detail.value?.qr_text) return
+  navigator.clipboard?.writeText(detail.value.qr_text)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
+}
 
 onMounted(async () => {
   try {
     detail.value = await api.get(`/patient-portal/history/${route.params.id}`)
+    if (detail.value?.is_kunjungan_cfd && detail.value.status === 'pending') {
+      startQueuePolling()
+    }
   } catch (err) {
     errorMessage.value = err instanceof ApiError ? err.message : 'Gagal memuat detail hasil'
   } finally {
@@ -89,6 +108,49 @@ function formatRupiah(value: number) {
         <div v-if="detail.jenis_spesimen" class="mt-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
           <p class="text-xs text-neutral-400">Jenis Spesimen</p>
           <p class="text-sm font-semibold text-neutral-900">{{ detail.jenis_spesimen }}</p>
+        </div>
+
+        <div v-if="detail.antrian_ke" class="mt-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
+          <p class="text-xs text-neutral-400">Nomor Antrean</p>
+          <p class="font-heading text-2xl font-bold text-primary-600">{{ detail.antrian_ke }}</p>
+        </div>
+
+        <div v-if="detail.is_kunjungan_cfd && detail.status === 'pending' && queueStatus" class="mt-3 rounded-2xl bg-secondary-50 p-4 text-center">
+          <p class="text-xs text-secondary-600">Sisa antrean di depan Anda</p>
+          <p class="font-heading mt-1 text-3xl font-bold tabular-nums text-secondary-700">
+            {{ queueStatus.status === 'pending' ? queueStatus.sisa_di_depan : 0 }}
+          </p>
+          <p class="mt-1 text-xs text-secondary-600">orang, diperbarui otomatis</p>
+        </div>
+
+        <!-- QR check-in: cuma untuk kunjungan online non-CFD (CFD punya worklist
+             realtime sendiri, tidak perlu scan). Blur+Expired kalau sudah lewat
+             masa berlaku, supaya tidak bisa dipakai check-in dua kali. -->
+        <div v-if="detail.qr_image" class="mt-3 rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
+          <p class="mb-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-neutral-700">
+            <QrCode class="size-4.5" /> Tunjukkan QR ini saat datang
+          </p>
+          <img :src="detail.qr_image" alt="QR check-in" class="mx-auto size-48 rounded-xl border border-neutral-100">
+          <p class="mt-3 text-xs text-neutral-400">Petugas akan memindai QR ini agar pemeriksaan Anda otomatis terisi</p>
+          <button
+            type="button" class="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-500"
+            @click="copyQrText"
+          >
+            <Check v-if="copied" class="size-3.5 text-secondary-600" />
+            <Copy v-else class="size-3.5" />
+            {{ copied ? 'Kode tersalin' : 'Kendala scan? Salin kode' }}
+          </button>
+        </div>
+        <div v-else-if="detail.qr_expired" class="relative mt-3 overflow-hidden rounded-2xl bg-white p-5 text-center shadow-sm shadow-neutral-200/60">
+          <div class="pointer-events-none select-none blur-sm">
+            <p class="mb-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-neutral-700">
+              <QrCode class="size-4.5" /> QR Check-in
+            </p>
+            <div class="mx-auto size-48 rounded-xl bg-neutral-200" />
+          </div>
+          <div class="absolute inset-0 flex items-center justify-center bg-white/50">
+            <span class="rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-bold uppercase tracking-wide text-white">Expired</span>
+          </div>
         </div>
 
         <div v-if="!detail.is_ready" class="mt-4 flex items-center gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
