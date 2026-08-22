@@ -215,7 +215,7 @@ async function submitRegister() {
       </div>
       <h2 class="font-heading mt-4 text-lg font-bold text-neutral-900">Halo, {{ patientName }}</h2>
       <p class="mt-2 max-w-xs text-sm text-neutral-500">
-        Anda layak mengikuti pemeriksaan CFD hari ini. Lanjutkan pendaftaran dengan akun Anda yang sedang login?
+        Anda <span class="font-bold">memenuhi syarat</span> mengikuti pemeriksaan gratis di CFD hari ini. Lanjutkan pendaftaran dengan akun Anda yang sedang login?
       </p>
       <AppButton class="mt-6 w-full" :loading="loading" @click="step = 'pilih'">Ya, Lanjutkan</AppButton>
       <NuxtLink to="/dashboard" class="mt-3 text-sm font-medium text-neutral-500">Batal</NuxtLink>
@@ -233,7 +233,7 @@ async function submitRegister() {
 
     <!-- Step: pilih kategori -->
     <form v-else-if="step === 'pilih'" class="space-y-5" @submit.prevent="submitRegister">
-      <AppAlert variant="success">Halo {{ patientName }}, Anda layak mengikuti CFD hari ini!</AppAlert>
+      <AppAlert variant="success">Halo <span class="font-bold">{{ patientName }}</span>, Anda <span class="font-bold">memenuhi syarat</span> mengikuti pemeriksaan gratis di CFD hari ini!</AppAlert>
       <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
 
       <div>
@@ -313,9 +313,9 @@ async function submitRegister() {
       <NuxtLink :to="berandaLink" class="mt-6"><AppButton variant="outline">Kembali ke Beranda</AppButton></NuxtLink>
     </div>
 
-    <!-- Step: tidak layak -->
+    <!-- Step: tidak memenuhi syarat -->
     <div v-else-if="step === 'tidak_layak'" class="flex flex-1 flex-col items-center justify-center text-center">
-      <AppAlert variant="info" class="text-left">
+      <AppAlert variant="error" class="text-left">
         <span v-if="eligibility?.kuota.penuh">Kuota CFD hari ini sudah penuh, silakan datang di kesempatan berikutnya.</span>
         <span v-else-if="eligibility?.sudah_cfd_hari_ini">
           Anda sudah mengikuti pemeriksaan CFD hari ini. Satu kunjungan CFD hanya untuk satu pemeriksaan
