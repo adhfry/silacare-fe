@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, ScanLine, CircleHelp, CheckCircle2, Bell, XCircle } from 'lucide-vue-next'
+import { Plus, CalendarClock, X, Search, AlertCircle, Ban, PencilLine, QrCode, ScanLine, CircleHelp, CheckCircle2, Bell, XCircle, HeartPulse } from 'lucide-vue-next'
+import { isAbnormalResult } from '~/utils/resultStatus'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -7,6 +8,13 @@ interface QueueLayanan {
   id: number
   name: string
   price: string
+}
+
+interface CfdHasilItem {
+  nama: string | null
+  hasil: string | null
+  satuan: string | null
+  nilai_rujukan: string | null
 }
 
 interface QueueItem {
@@ -19,6 +27,7 @@ interface QueueItem {
   dibatalkan_at: string | null
   ditolak: boolean
   ditolak_alasan: string | null
+  is_kunjungan_cfd: boolean
   can_cancel: boolean
   revisi_count: number
   revisi_sisa: number
@@ -29,6 +38,8 @@ interface QueueItem {
   sudah_diverifikasi: boolean
   can_follow_up: boolean
   follow_up_next_at: string | null
+  cfd_hasil_ready: boolean
+  cfd_hasil: CfdHasilItem[] | null
   layanan: QueueLayanan[]
   pembayaran: { total_biaya: string | null; status: string }
 }
@@ -54,10 +65,51 @@ interface Layanan {
 const api = useApi()
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 
 const queues = ref<QueueItem[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
+
+// Umur pasien -- dipakai aturan nilai rujukan berbasis usia untuk preview
+// hasil CFD, sama seperti perhitungan di riwayat/[id].vue.
+const patientAge = computed<number | null>(() => {
+  const tglLahir = auth.profile?.patient.tgl_lahir
+  if (!tglLahir) return null
+  const birthDate = new Date(tglLahir)
+  const today = new Date()
+  let usia = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const dayDiff = today.getDate() - birthDate.getDate()
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) usia--
+  return usia
+})
+
+function isAbnormal(item: CfdHasilItem): boolean {
+  return isAbnormalResult(item.hasil, item.nilai_rujukan, {
+    age: patientAge.value,
+    gender: auth.profile?.patient.gender ?? null,
+  })
+}
+
+// Antrean CFD hidup (belum diperiksa -- status masih pending, belum ada hasil
+// sama sekali) dapat countdown "sisa di depan" realtime. Begitu hasil sudah
+// diinput semua (cfd_hasil_ready), posisi antrean tidak relevan lagi --
+// preview hasil yang ditampilkan sebagai gantinya.
+const activeCfdItem = computed(() =>
+  queues.value.find((q) => q.is_kunjungan_cfd && q.status === 'pending' && !q.dibatalkan && !q.ditolak && !q.cfd_hasil_ready) || null,
+)
+const activeCfdId = computed(() => activeCfdItem.value?.id ?? null)
+const { status: cfdQueueStatus, start: startCfdQueuePolling, stop: stopCfdQueuePolling } = useCfdQueueStatus(activeCfdId)
+
+// Halaman ini "realtime" selama masih dibuka -- poll ulang seluruh daftar
+// tiap beberapa detik selama ada antrean CFD yang masih berjalan (baik masih
+// menunggu giliran ATAU sudah tapi hasilnya belum lengkap semua), supaya
+// hasil yang baru selesai diinput petugas langsung muncul tanpa reload.
+let listPollTimer: ReturnType<typeof setInterval> | undefined
+const hasOngoingCfd = computed(() =>
+  queues.value.some((q) => q.is_kunjungan_cfd && q.status === 'pending' && !q.dibatalkan && !q.ditolak),
+)
 
 const showForm = ref(false)
 const showActiveModal = ref(false)
@@ -249,6 +301,16 @@ async function loadQueues() {
   }
 }
 
+// Refresh diam-diam untuk polling background (tidak menampilkan skeleton
+// loading ulang tiap tick, cukup ganti data begitu sudah didapat).
+async function refreshQueuesQuietly() {
+  try {
+    queues.value = await api.get('/patient-portal/queues')
+  } catch {
+    // polling silent-fail -- jangan ganggu pasien dengan error tiap beberapa detik.
+  }
+}
+
 async function loadQuota() {
   try {
     quota.value = await api.get('/patient-portal/queues/quota')
@@ -426,10 +488,28 @@ onMounted(async () => {
   if (route.query.booking === '1') openForm()
   tickFollowUpCountdowns()
   followUpTimer = setInterval(tickFollowUpCountdowns, 1000)
+  if (activeCfdId.value) startCfdQueuePolling()
+  if (hasOngoingCfd.value) listPollTimer = setInterval(refreshQueuesQuietly, 10000)
+})
+
+watch(activeCfdId, (id) => {
+  if (id) startCfdQueuePolling()
+  else stopCfdQueuePolling()
+})
+
+watch(hasOngoingCfd, (ongoing) => {
+  if (ongoing && !listPollTimer) {
+    listPollTimer = setInterval(refreshQueuesQuietly, 10000)
+  } else if (!ongoing && listPollTimer) {
+    clearInterval(listPollTimer)
+    listPollTimer = undefined
+  }
 })
 
 onBeforeUnmount(() => {
   clearInterval(followUpTimer)
+  clearInterval(listPollTimer)
+  stopCfdQueuePolling()
 })
 </script>
 
@@ -622,8 +702,14 @@ onBeforeUnmount(() => {
           <div v-for="q in queues" :key="q.id" class="rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60">
             <div class="flex items-start justify-between">
               <div>
-                <p class="text-sm font-semibold text-neutral-800">
+                <p class="flex items-center gap-1.5 text-sm font-semibold text-neutral-800">
                   {{ formatDate(q.tanggal) }}<span v-if="q.jam_kedatangan"> · {{ q.jam_kedatangan }} WIB</span>
+                  <span
+                    v-if="q.is_kunjungan_cfd"
+                    class="inline-flex items-center gap-1 rounded-full bg-secondary-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-secondary-700"
+                  >
+                    <HeartPulse class="size-3" /> CFD
+                  </span>
                 </p>
                 <p class="text-xs text-neutral-400">Nomor antrean: {{ q.antrian_ke ?? '-' }}</p>
               </div>
@@ -664,6 +750,39 @@ onBeforeUnmount(() => {
               <span class="text-sm font-bold text-neutral-800">
                 {{ q.pembayaran.total_biaya ? formatRupiah(Number(q.pembayaran.total_biaya)) : '-' }}
               </span>
+            </div>
+
+            <!-- Antrean CFD hidup: countdown sisa di depan, realtime (poll
+                 tiap beberapa detik selama halaman ini terbuka). -->
+            <div
+              v-if="q.is_kunjungan_cfd && q.id === activeCfdId && cfdQueueStatus"
+              class="mt-3 rounded-xl border-t border-neutral-100 bg-secondary-50 p-4 pt-4 text-center"
+            >
+              <p class="text-xs text-secondary-600">Sisa antrean CFD di depan Anda</p>
+              <p class="font-heading mt-1 text-3xl font-bold tabular-nums text-secondary-700">
+                {{ cfdQueueStatus.status === 'pending' ? cfdQueueStatus.sisa_di_depan : 0 }}
+              </p>
+              <p class="mt-1 text-xs text-secondary-600">orang, diperbarui otomatis</p>
+            </div>
+
+            <!-- Hasil CFD -- nilai mentah begitu SEMUA parameter sudah diinput
+                 petugas di lokasi (belum tentu sudah resmi disetujui -- itu
+                 baru muncul di Riwayat setelah status_konfirmasi approved).
+                 Merah kalau di luar nilai rujukan, sama seperti Riwayat. -->
+            <div v-if="q.is_kunjungan_cfd && q.cfd_hasil_ready && q.cfd_hasil" class="mt-3 rounded-xl border-t border-neutral-100 bg-neutral-50 p-4 pt-4">
+              <p class="mb-2 text-xs font-semibold text-neutral-700">Hasil Pemeriksaan CFD</p>
+              <div class="space-y-1.5">
+                <div v-for="(item, idx) in q.cfd_hasil" :key="idx" class="flex items-center justify-between text-xs">
+                  <span class="text-neutral-500">{{ item.nama }}</span>
+                  <span
+                    class="font-semibold"
+                    :class="isAbnormal(item) ? 'text-red-600' : 'text-neutral-900'"
+                  >
+                    {{ item.hasil }} {{ item.satuan }}
+                  </span>
+                </div>
+              </div>
+              <p class="mt-2 text-[11px] text-neutral-400">Dokumen resmi bisa dilihat di halaman Riwayat setelah diverifikasi petugas laboratorium.</p>
             </div>
 
             <!-- Sudah check-in (via QR pribadi discan petugas ATAU fallback
