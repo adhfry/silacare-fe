@@ -317,7 +317,7 @@ async function submitBooking() {
   submitting.value = true
   try {
     await api.post('/patient-portal/queues', { layanan_ids: selectedLayanan.value, tanggal: tanggal.value, jam: jam.value })
-    successMessage.value = 'Booking berhasil! Silakan datang sesuai jadwal dan bawa uang tunai sesuai total biaya.'
+    successMessage.value = 'Janji berhasil dibuat! Silakan datang sesuai jadwal dan bawa uang tunai sesuai total biaya.'
     selectedLayanan.value = []
     tanggal.value = ''
     jam.value = ''
@@ -325,7 +325,7 @@ async function submitBooking() {
     await router.replace('/dashboard/antrean')
     await Promise.all([loadQueues(), loadQuota()])
   } catch (err) {
-    formError.value = err instanceof ApiError ? err.message : 'Gagal membuat booking'
+    formError.value = err instanceof ApiError ? err.message : 'Gagal membuat janji'
   } finally {
     submitting.value = false
   }
@@ -585,7 +585,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="mt-1.5 text-xs text-neutral-400">Pembayaran tunai di lokasi, diverifikasi petugas administrasi saat kedatangan.</p>
 
-          <AppButton class="mt-4 w-full" :loading="submitting" @click="submitBooking">Konfirmasi Booking</AppButton>
+          <AppButton class="mt-4 w-full" :loading="submitting" @click="submitBooking">Konfirmasi Janji</AppButton>
         </template>
       </div>
 
@@ -593,7 +593,7 @@ onBeforeUnmount(() => {
 
       <!-- Queue list -->
       <div class="mt-6">
-        <h2 class="font-heading mb-3 text-base font-semibold text-neutral-900">Riwayat Booking</h2>
+        <h2 class="font-heading mb-3 text-base font-semibold text-neutral-900">Riwayat Janji</h2>
 
         <AppAlert v-if="errorMessage" variant="error">{{ errorMessage }}</AppAlert>
 
@@ -615,7 +615,7 @@ onBeforeUnmount(() => {
 
         <div v-else-if="!queues.length" class="flex flex-col items-center py-12 text-center">
           <CalendarClock class="size-12 text-neutral-300" />
-          <p class="mt-3 text-sm text-neutral-400">Belum ada booking antrean online</p>
+          <p class="mt-3 text-sm text-neutral-400">Belum ada janji antrean online</p>
         </div>
 
         <div v-else class="space-y-3">
