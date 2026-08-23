@@ -1,5 +1,11 @@
 import tailwindcss from '@tailwindcss/vite'
 
+// WhatsApp/Facebook TIDAK mengikuti URL relatif untuk og:image/twitter:image
+// (crawler-nya tidak me-resolve terhadap base URL halaman) -- SELALU harus
+// absolut (https://...), makanya dibangun dari siteUrl yang sama dengan
+// runtimeConfig.public.siteUrl di bawah, bukan cuma '/og-image.png'.
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://silacare.labkesdasumenep.id'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -80,21 +86,25 @@ export default defineNuxtConfig({
         { property: 'og:site_name', content: 'SiLACARE' },
         { property: 'og:type', content: 'website' },
         { property: 'og:locale', content: 'id_ID' },
+        { property: 'og:url', content: siteUrl },
         { property: 'og:title', content: 'SiLACARE — Portal Pasien Labkesda Sumenep' },
         {
           property: 'og:description',
           content: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
         },
-        { property: 'og:image', content: '/og-image.png' },
+        { property: 'og:image', content: `${siteUrl}/og-image.png` },
+        { property: 'og:image:secure_url', content: `${siteUrl}/og-image.png` },
+        { property: 'og:image:type', content: 'image/png' },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'SiLACARE — Portal Pasien Labkesda Sumenep' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'SiLACARE — Portal Pasien Labkesda Sumenep' },
         {
           name: 'twitter:description',
           content: 'Portal digital pasien UPTD Laboratorium Kesehatan Daerah Kabupaten Sumenep. Lihat riwayat pemeriksaan, antre online, dan daftar Car Free Day gratis.',
         },
-        { name: 'twitter:image', content: '/og-image.png' },
+        { name: 'twitter:image', content: `${siteUrl}/og-image.png` },
       ],
       link: [
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/pwa/icon-180.png' },
