@@ -196,6 +196,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 async function onPhoto(event: Event) {
   await scan.handlePhoto(event, () => {
     if (flow.newPatientForm) Object.assign(scan.form, flow.newPatientForm)
+    newPhone.value = flow.phone
     flow.step = 'new-form'
   })
 }
@@ -254,8 +255,13 @@ watch(() => flow.nik, (val) => {
   }
 })
 
+// Dipakai tombol "Tidak Memiliki KTP" (mis. KTP ketinggalan, atau anak-anak
+// yang memang belum punya KTP sama sekali) -- lewati foto/OCR sepenuhnya,
+// form pasien baru diisi kosong/manual. NIK sudah otomatis terisi (v-model
+// flow.nik dipakai langsung di step 'new-form'), nomor HP yang sudah
+// diketik di step identitas ikut dibawa juga supaya tidak perlu diketik ulang.
 function goToNewForm() {
-  // Kalau OCR gagal total, user tetap bisa lanjut isi manual.
+  newPhone.value = flow.phone
   flow.step = 'new-form'
 }
 
@@ -428,7 +434,13 @@ async function submitNewPatient() {
           <ImageUp class="size-4.5" /> Galeri
         </AppButton>
       </div>
-      <button class="mt-4 text-center text-sm font-medium text-neutral-500" @click="flow.step = 'identity'">
+      <button class="mt-4 text-center text-sm font-medium text-primary-600" @click="goToNewForm">
+        Tidak Memiliki KTP
+      </button>
+      <p class="mt-1 text-center text-xs text-neutral-400">
+        Misalnya KTP tertinggal, atau anak-anak yang belum punya KTP
+      </p>
+      <button class="mt-3 text-center text-sm font-medium text-neutral-500" @click="flow.step = 'identity'">
         Kembali ke NIK
       </button>
     </div>
