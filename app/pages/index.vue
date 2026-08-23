@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, CalendarClock, HeartPulse, ArrowRight, UserPlus } from 'lucide-vue-next'
+import { FileText, CalendarClock, HeartPulse, ArrowRight, UserPlus, BookOpen } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'guest', middleware: 'guest-only' })
 
@@ -83,6 +83,9 @@ const features = [
       </NuxtLink>
       <NuxtLink to="/login" class="block text-center text-sm font-medium text-neutral-500 py-2">
         Sudah punya akun? <span class="text-primary-600">Masuk</span>
+      </NuxtLink>
+      <NuxtLink to="/panduan" class="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-neutral-400">
+        <BookOpen class="size-3.5" /> Panduan Antrean Online
       </NuxtLink>
     </div>
   </div>

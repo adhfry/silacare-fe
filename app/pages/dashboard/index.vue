@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, CalendarClock, ChevronRight, HeartPulse, MapPin, CheckCircle2, Clock, BadgeCheck, CircleHelp } from 'lucide-vue-next'
+import { FileText, CalendarClock, ChevronRight, HeartPulse, MapPin, CheckCircle2, Clock, BadgeCheck, CircleHelp, BookOpen } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -230,6 +230,20 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
         <p class="text-xs text-primary-500">Pilih layanan & tanggal kedatangan</p>
       </div>
       <ChevronRight class="size-5 text-primary-400" />
+    </NuxtLink>
+
+    <NuxtLink
+      to="/panduan"
+      class="mt-3 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60"
+    >
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500">
+        <BookOpen class="size-4.5" />
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold text-neutral-800">Panduan Antrean Online</p>
+        <p class="text-xs text-neutral-400">Cara aktivasi akun, antrean, dan pemeriksaan CFD</p>
+      </div>
+      <ChevronRight class="size-4 shrink-0 text-neutral-300" />
     </NuxtLink>
 
     <!-- Info & status pemeriksaan gratis di CFD -->
