@@ -210,7 +210,7 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           </tippy>
         </p>
 
-        <p v-if="cfdStatus.kelayakan.kuota.penuh" class="text-xs text-neutral-400">
+        <p v-if="cfdStatus.kelayakan.kuota.penuh" class="text-xs font-medium text-red-600">
           Kuota hari ini sudah penuh, coba lagi di kesempatan berikutnya.
         </p>
 
@@ -222,12 +222,18 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
         </div>
 
         <NuxtLink
-          v-if="!cfdStatus.kelayakan.sudah_cfd_hari_ini"
+          v-if="!cfdStatus.kelayakan.sudah_cfd_hari_ini && !cfdStatus.kelayakan.kuota.penuh"
           to="/cfd"
           class="mt-1 block w-full rounded-xl bg-secondary-600 py-2.5 text-center text-sm font-semibold text-white active:scale-[0.98]"
         >
-          Daftar CFD
+          Daftar Pemeriksaan Gratis
         </NuxtLink>
+        <button
+          v-else-if="cfdStatus.kelayakan.kuota.penuh" type="button" disabled
+          class="mt-1 block w-full cursor-not-allowed rounded-xl bg-neutral-200 py-2.5 text-center text-sm font-semibold text-neutral-500"
+        >
+          Daftar Pemeriksaan Gratis
+        </button>
         <button
           v-else type="button" disabled
           class="mt-1 block w-full cursor-not-allowed rounded-xl bg-neutral-200 py-2.5 text-center text-sm font-semibold text-neutral-500"
