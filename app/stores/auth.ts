@@ -8,6 +8,10 @@ interface PatientProfile {
   // true HANYA utk akun hasil klaim-via-email (nomor SiLAKES lama bukan WA
   // aktif) -- lihat modal wajib di layouts/dashboard.vue.
   needs_wa_verification: boolean
+  // true kalau nomor HP akun ini dipakai bareng akun lain yang juga aktif
+  // (anggota keluarga berbagi nomor) -- dashboard/akun menampilkan tombol
+  // "Pindah Profil" kalau true.
+  has_multiple_profiles: boolean
   last_login_at: string | null
   completeness: { percent: number; missing_fields: string[] } | null
   has_pending_update_request: boolean

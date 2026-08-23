@@ -10,6 +10,7 @@ const api = useApi()
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { setLoginCandidates } = useProfileSelection()
 
 const phone = ref('')
 const password = ref('')
@@ -29,6 +30,16 @@ async function submit() {
       phone: phone.value,
       password: password.value,
     })
+
+    // Nomor ini terhubung ke 2+ akun (anggota keluarga berbagi nomor HP) --
+    // password sudah dicocokkan di backend, user tinggal pilih profil mana
+    // sebelum token sungguhan diterbitkan (lihat pilih-profil.vue).
+    if (data.needs_selection) {
+      setLoginCandidates(data.selection_token, data.profiles)
+      await router.push('/pilih-profil')
+      return
+    }
+
     auth.setToken(data.token)
     auth.setProfile(data.profile)
     const redirect = (route.query.redirect as string) || '/dashboard'

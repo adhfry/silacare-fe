@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { LogOut, MapPin, Phone, Fingerprint, Eye, EyeOff, UserPen, ChevronRight } from 'lucide-vue-next'
+import { LogOut, MapPin, Phone, Fingerprint, Eye, EyeOff, UserPen, ChevronRight, Users } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+const api = useApi()
 const auth = useAuthStore()
 const router = useRouter()
+const { setSwitchCandidates } = useProfileSelection()
 
 const nikVisible = ref(false)
 const displayedNik = computed(() => {
@@ -14,11 +16,28 @@ const displayedNik = computed(() => {
 
 const showLogoutModal = ref(false)
 const loggingOut = ref(false)
+const loadingProfiles = ref(false)
 
 function confirmLogout() {
   loggingOut.value = true
   auth.logout()
   router.push('/login')
+}
+
+// Nomor HP akun ini dipakai bareng akun lain yang aktif (anggota keluarga) --
+// ambil daftar profil terhubung, lalu arahkan ke layar pilih-profil yang sama
+// dipakai jalur login (lihat pilih-profil.vue), TANPA logout dulu.
+async function pindahProfil() {
+  loadingProfiles.value = true
+  try {
+    const list = await api.get('/patient-portal/auth/linked-profiles')
+    setSwitchCandidates(list)
+    await router.push('/pilih-profil')
+  } catch {
+    // Gagal ambil daftar profil (jaringan/server) -- diamkan, user tetap di halaman ini.
+  } finally {
+    loadingProfiles.value = false
+  }
 }
 </script>
 
@@ -98,6 +117,22 @@ function confirmLogout() {
         </div>
         <ChevronRight class="size-4 shrink-0 text-neutral-300" />
       </NuxtLink>
+
+      <button
+        v-if="auth.profile?.has_multiple_profiles"
+        type="button" :disabled="loadingProfiles"
+        class="mt-4 flex w-full items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-neutral-200/60 disabled:opacity-60"
+        @click="pindahProfil"
+      >
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+          <Users class="size-4.5" />
+        </div>
+        <div class="min-w-0 flex-1 text-left">
+          <p class="text-sm font-semibold text-neutral-800">Pindah Profil</p>
+          <p class="text-xs text-neutral-400">Nomor HP ini terhubung ke profil pasien lain</p>
+        </div>
+        <ChevronRight class="size-4 shrink-0 text-neutral-300" />
+      </button>
 
       <button
         class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-100 py-3.5 text-[15px] font-semibold text-red-600"
