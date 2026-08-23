@@ -44,47 +44,92 @@ function toggle(id: SectionId) {
           <ChevronDown class="size-4.5 shrink-0 text-neutral-300 transition-transform" :class="{ 'rotate-180': openSection === 'aktivasi' }" />
         </button>
 
-        <div v-show="openSection === 'aktivasi'" class="space-y-4 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
+        <div v-show="openSection === 'aktivasi'" class="space-y-5 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
           <p>
             Jika Anda pernah datang dan mendaftar langsung di Labkesda dalam kurun waktu kurang lebih satu tahun terakhir,
             data Anda kemungkinan besar sudah tersimpan di sistem SiLAKES. Anda tidak perlu mendaftar dari awal, cukup
             lakukan aktivasi akun.
           </p>
 
+          <!-- Sub A: Aktivasi akun pasien lama -->
           <div class="rounded-xl bg-primary-50/60 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-primary-700">
               <Fingerprint class="size-4 shrink-0" /> Langkah Aktivasi Akun
             </p>
-            <ol class="mt-2 list-decimal space-y-1.5 pl-4 text-xs text-neutral-600">
-              <li>Buka halaman Daftar, lalu masukkan NIK dan nomor HP Anda.</li>
-              <li>Jika data ditemukan, sistem akan mengirimkan kode OTP melalui pesan WhatsApp ke nomor tersebut.</li>
-              <li>Masukkan kode OTP yang diterima, lalu buat kata sandi untuk akun Anda.</li>
-              <li>Akun aktif dan Anda dapat langsung masuk ke dashboard SiLACARE.</li>
-            </ol>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">1</span>
+                <p class="pt-0.5 text-xs text-neutral-600">Buka halaman Daftar, lalu masukkan NIK dan nomor HP Anda.</p>
+              </div>
+              <img src="/panduan/identity.png" alt="Langkah 1: isi NIK dan nomor HP di halaman Daftar" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">2</span>
+                <p class="pt-0.5 text-xs text-neutral-600">Jika data ditemukan, kode OTP dikirim melalui WhatsApp ke nomor tersebut. Masukkan kode itu untuk verifikasi.</p>
+              </div>
+              <img src="/panduan/otp.png" alt="Langkah 2: masukkan kode OTP dari WhatsApp" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">3</span>
+                <p class="pt-0.5 text-xs text-neutral-600">Buat kata sandi untuk akun Anda. Akun langsung aktif dan Anda masuk ke dashboard SiLACARE.</p>
+              </div>
+              <img src="/panduan/password.png" alt="Langkah 3: buat kata sandi akun" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
           </div>
 
+          <!-- Sub B: Klaim via email -->
           <div class="rounded-xl bg-secondary-50/60 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-secondary-700">
               <Mail class="size-4 shrink-0" /> Nomor HP Sudah Tidak Aktif di WhatsApp?
             </p>
             <p class="mt-1.5 text-xs text-neutral-600">
               Jika nomor HP yang tercatat di data lama Anda sudah tidak digunakan atau tidak aktif di WhatsApp, gunakan
-              fitur Klaim Akun melalui Email pada halaman Daftar. Anda akan diminta memverifikasi data diri, lalu
+              fitur Klaim Akun melalui Email yang tertaut pada layar verifikasi OTP. Setelah data diri Anda terverifikasi,
               kode verifikasi dikirim ke alamat email yang Anda daftarkan sebagai gantinya.
             </p>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary-600 text-[11px] font-bold text-white">1</span>
+                <p class="pt-0.5 text-xs text-neutral-600">Pilih Klaim lewat Email, lalu masukkan alamat email aktif untuk menerima kode verifikasi.</p>
+              </div>
+              <img src="/panduan/klaim-email.png" alt="Langkah klaim akun via email: isi alamat email" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
           </div>
 
+          <!-- Sub C: Pasien baru -->
           <div class="rounded-xl bg-neutral-50 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-neutral-700">
               <UserPlus class="size-4 shrink-0" /> Belum Pernah Terdaftar Sama Sekali?
             </p>
             <p class="mt-1.5 text-xs text-neutral-600">
               Jika NIK Anda tidak ditemukan pada langkah pertama, berarti Anda belum pernah tercatat sebagai pasien
-              Labkesda. Anda dapat langsung mendaftar sebagai pasien baru melalui halaman Daftar dengan mengisi data
-              diri secara mandiri. Bagi yang tidak membawa atau belum memiliki KTP, misalnya anak-anak atau KTP yang
-              tertinggal, tersedia pilihan Tidak Memiliki KTP pada langkah pemotretan KTP sehingga Anda tetap dapat
-              melanjutkan pendaftaran dengan mengisi data secara manual.
+              Labkesda. Anda dapat langsung mendaftar sebagai pasien baru dengan mengisi data diri secara mandiri.
             </p>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-neutral-700 text-[11px] font-bold text-white">1</span>
+                <p class="pt-0.5 text-xs text-neutral-600">
+                  Foto KTP untuk mengisi data secara otomatis. Bagi yang tidak membawa atau belum memiliki KTP,
+                  misalnya anak-anak atau KTP yang tertinggal, pilih Tidak Memiliki KTP untuk lanjut mengisi data secara manual.
+                </p>
+              </div>
+              <img src="/panduan/new-photo.png" alt="Langkah pendaftaran pasien baru: opsi Tidak Memiliki KTP" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-neutral-700 text-[11px] font-bold text-white">2</span>
+                <p class="pt-0.5 text-xs text-neutral-600">Lengkapi data diri, nomor HP aktif, dan buat kata sandi, lalu daftar. Tidak perlu verifikasi OTP untuk pendaftaran pasien baru.</p>
+              </div>
+              <img src="/panduan/new-form.png" alt="Langkah pendaftaran pasien baru: isi formulir data diri" class="ml-7 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+            </div>
           </div>
         </div>
       </div>
@@ -102,31 +147,32 @@ function toggle(id: SectionId) {
           <ChevronDown class="size-4.5 shrink-0 text-neutral-300 transition-transform" :class="{ 'rotate-180': openSection === 'antrean' }" />
         </button>
 
-        <div v-show="openSection === 'antrean'" class="space-y-4 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
+        <div v-show="openSection === 'antrean'" class="space-y-5 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
           <p>
             SiLACARE menyediakan dua fitur yang saling melengkapi untuk membantu Anda menghindari antre lama di lokasi.
           </p>
 
           <div class="rounded-xl bg-neutral-50 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-neutral-700">
-              <ListChecks class="size-4 shrink-0" /> Buat Janji Pemeriksaan
+              <ListChecks class="size-4 shrink-0" /> Langkah 1: Buat Janji Pemeriksaan
             </p>
             <p class="mt-1.5 text-xs text-neutral-600">
-              Fitur ini digunakan untuk memesan tanggal dan jenis layanan pemeriksaan terlebih dahulu, sebelum Anda
-              datang ke Labkesda. Pembayaran tetap dilakukan secara tunai langsung di lokasi, bukan melalui aplikasi.
+              Pesan tanggal dan jam kedatangan serta pilih layanan pemeriksaan terlebih dahulu, sebelum Anda datang ke
+              Labkesda. Pembayaran tetap dilakukan secara tunai langsung di lokasi, bukan melalui aplikasi.
             </p>
+            <img src="/panduan/buat-janji.png" alt="Langkah 1: buat janji pemeriksaan, pilih tanggal dan layanan" class="mt-2 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
           </div>
 
           <div class="rounded-xl bg-neutral-50 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-neutral-700">
-              <QrCode class="size-4 shrink-0" /> Antrean Online
+              <QrCode class="size-4 shrink-0" /> Langkah 2: Antrean Online
             </p>
             <p class="mt-1.5 text-xs text-neutral-600">
-              Fitur ini digunakan untuk memantau nomor antrean Anda secara langsung pada hari kedatangan. Setibanya di
-              Labkesda, pindai kode QR yang tersedia di lokasi untuk melakukan check-in, lalu pantau status antrean
-              Anda melalui halaman Antrean Online agar Anda tahu kapan giliran Anda tiba tanpa perlu menunggu di ruang
-              tunggu sejak awal.
+              Pada hari kedatangan, pindai kode QR yang tersedia di lokasi untuk check-in, lalu pantau nomor dan status
+              antrean Anda melalui halaman Antrean Online agar Anda tahu kapan giliran Anda tiba tanpa perlu menunggu
+              di ruang tunggu sejak awal.
             </p>
+            <img src="/panduan/antrean-online.png" alt="Langkah 2: pantau status antrean online" class="mt-2 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
           </div>
 
           <p class="text-xs text-neutral-500">
@@ -149,11 +195,19 @@ function toggle(id: SectionId) {
           <ChevronDown class="size-4.5 shrink-0 text-neutral-300 transition-transform" :class="{ 'rotate-180': openSection === 'cfd' }" />
         </button>
 
-        <div v-show="openSection === 'cfd'" class="space-y-4 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
+        <div v-show="openSection === 'cfd'" class="space-y-5 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
           <p>
             Labkesda menyediakan pemeriksaan kesehatan gratis setiap hari Minggu pagi mulai pukul 07.00 di area Car
             Free Day. Pendaftaran dibuka melalui SiLACARE agar Anda tidak perlu mengantre panjang di lokasi.
           </p>
+
+          <div class="rounded-xl bg-neutral-50 p-3.5">
+            <div class="flex items-start gap-2">
+              <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">1</span>
+              <p class="pt-0.5 text-xs text-neutral-600">Buka halaman Pemeriksaan Gratis CFD, lalu masukkan NIK Anda untuk mengecek kelayakan dan mendaftar.</p>
+            </div>
+            <img src="/panduan/cfd.png" alt="Langkah 1: masukkan NIK di halaman pemeriksaan gratis CFD" class="ml-7 mt-2 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+          </div>
 
           <div class="rounded-xl bg-neutral-50 p-3.5">
             <p class="text-xs font-semibold text-neutral-700">Ketentuan Pemeriksaan</p>
@@ -188,12 +242,27 @@ function toggle(id: SectionId) {
           <ChevronDown class="size-4.5 shrink-0 text-neutral-300 transition-transform" :class="{ 'rotate-180': openSection === 'lengkapi' }" />
         </button>
 
-        <div v-show="openSection === 'lengkapi'" class="space-y-4 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
+        <div v-show="openSection === 'lengkapi'" class="space-y-5 border-t border-neutral-100 p-4 pt-4 text-sm text-neutral-600">
           <p>
             Setelah akun Anda aktif, sebagian data diri yang tersimpan mungkin belum lengkap, terutama bagi pasien
-            lama yang datanya sudah cukup lama tercatat. Kelengkapan data diri Anda ditampilkan dalam bentuk persentase
-            pada halaman Akun.
+            lama yang datanya sudah cukup lama tercatat.
           </p>
+
+          <div class="rounded-xl bg-neutral-50 p-3.5">
+            <div class="flex items-start gap-2">
+              <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white">1</span>
+              <p class="pt-0.5 text-xs text-neutral-600">Buka halaman Akun untuk melihat persentase kelengkapan data diri Anda saat ini.</p>
+            </div>
+            <img src="/panduan/akun-completeness.png" alt="Langkah 1: cek persentase kelengkapan data di halaman Akun" class="ml-7 mt-2 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+          </div>
+
+          <div class="rounded-xl bg-neutral-50 p-3.5">
+            <div class="flex items-start gap-2">
+              <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white">2</span>
+              <p class="pt-0.5 text-xs text-neutral-600">Pilih Update Informasi Pasien, lengkapi data yang masih kosong, lalu ajukan perubahan.</p>
+            </div>
+            <img src="/panduan/update-data.png" alt="Langkah 2: lengkapi formulir Update Informasi Pasien" class="ml-7 mt-2 w-40 rounded-xl border border-neutral-200 shadow-sm" loading="lazy">
+          </div>
 
           <div class="rounded-xl bg-amber-50/60 p-3.5">
             <p class="flex items-center gap-2 text-xs font-semibold text-amber-700">
@@ -207,9 +276,8 @@ function toggle(id: SectionId) {
           </div>
 
           <p class="text-xs text-neutral-500">
-            Untuk melengkapi data, buka halaman Akun setelah masuk ke SiLACARE, lalu pilih menu Update Informasi
-            Pasien. Perubahan yang Anda ajukan akan diperiksa dan disetujui oleh petugas Labkesda sebelum diperbarui
-            pada data resmi Anda.
+            Perubahan yang Anda ajukan akan diperiksa dan disetujui oleh petugas Labkesda sebelum diperbarui pada
+            data resmi Anda.
           </p>
         </div>
       </div>
