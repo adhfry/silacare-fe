@@ -2,6 +2,7 @@
 import {
   ChevronDown, UserCheck, CalendarClock, HeartPulse, UserCog,
   Fingerprint, Mail, UserPlus, QrCode, ListChecks, Sparkles,
+  Download, Loader2,
 } from 'lucide-vue-next'
 
 // Layout guest (BUKAN dashboard) supaya halaman ini bisa dibuka baik dari
@@ -19,6 +20,23 @@ const openSection = ref<SectionId | null>('aktivasi')
 function toggle(id: SectionId) {
   openSection.value = openSection.value === id ? null : id
 }
+
+// PDF dirakit langsung dari teks+gambar yang SAMA dengan isi halaman ini
+// (lihat utils/panduanPdf.ts) -- bukan screenshot DOM, supaya hasilnya rapi
+// & tidak tergantung state accordion yang sedang terbuka/tertutup.
+const downloadingPdf = ref(false)
+const downloadError = ref('')
+async function handleDownloadPdf() {
+  downloadError.value = ''
+  downloadingPdf.value = true
+  try {
+    await downloadPanduanPdf()
+  } catch {
+    downloadError.value = 'Gagal membuat PDF, silakan coba lagi.'
+  } finally {
+    downloadingPdf.value = false
+  }
+}
 </script>
 
 <template>
@@ -28,6 +46,17 @@ function toggle(id: SectionId) {
       <p class="mt-1.5 text-sm text-neutral-500">
         Semua yang perlu Anda ketahui tentang SiLACARE, dari aktivasi akun hingga pemeriksaan gratis Car Free Day.
       </p>
+
+      <button
+        type="button" :disabled="downloadingPdf"
+        class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary-600/25 active:scale-[0.98] disabled:opacity-70"
+        @click="handleDownloadPdf"
+      >
+        <Loader2 v-if="downloadingPdf" class="size-4 animate-spin" />
+        <Download v-else class="size-4" />
+        {{ downloadingPdf ? 'Menyiapkan PDF...' : 'Unduh Panduan (PDF)' }}
+      </button>
+      <p v-if="downloadError" class="mt-2 text-xs font-medium text-red-600">{{ downloadError }}</p>
     </div>
 
     <div class="space-y-3 pb-8">

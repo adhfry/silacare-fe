@@ -16,6 +16,7 @@
     "@vueuse/nuxt": "^14.4.0",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
+    "jspdf": "^4.2.1",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
