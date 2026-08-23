@@ -41,6 +41,57 @@ onMounted(async () => {
   }
 })
 
+// Countdown realtime ke jam buka CFD (Minggu 07.00) -- tombol "Daftar
+// Pemeriksaan Gratis" otomatis hijau + bisa diklik begitu waktunya tiba,
+// selama itu masih abu-abu dengan hitung mundur HH:MM:SS di bawah labelnya.
+// Dihitung MURNI dari jam lokal browser (bukan panggilan API terpisah ke
+// /cfd/timing) -- cukup akurat utk UI, backend tetap validator final saat
+// submit pendaftaran di halaman /cfd.
+const nowTick = ref(Date.now())
+let tickTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  tickTimer = setInterval(() => { nowTick.value = Date.now() }, 1000)
+})
+onBeforeUnmount(() => clearInterval(tickTimer))
+
+const CFD_JAM_MULAI = 7 // 07:00 WIB (waktu lokal browser pasien)
+
+// Window CFD SEDANG terbuka kalau hari ini persis Minggu dan sudah lewat
+// jam 07.00 -- dicek LANGSUNG dari jam sekarang, TIDAK lewat perbandingan
+// ke "target buka berikutnya" (target itu sengaja selalu menunjuk ke masa
+// depan, lihat nextCfdOpenAt(), jadi tidak cocok dipakai balik utk
+// mendeteksi "apakah SEDANG terbuka").
+const cfdWindowOpen = computed(() => {
+  const d = new Date(nowTick.value)
+  return d.getDay() === 0 && d.getHours() >= CFD_JAM_MULAI
+})
+
+// Kapan window buka BERIKUTNYA (Minggu 07.00 terdekat yang belum lewat) --
+// cuma dipakai utk teks hitung mundur SAAT window belum terbuka.
+function nextCfdOpenAt(from: Date): Date {
+  const d = new Date(from)
+  d.setHours(CFD_JAM_MULAI, 0, 0, 0)
+  const day = d.getDay()
+  if (day === 0 && d.getTime() <= from.getTime()) {
+    d.setDate(d.getDate() + 7)
+    return d
+  }
+  if (day !== 0) d.setDate(d.getDate() + (7 - day))
+  return d
+}
+
+const cfdCountdownText = computed(() => {
+  if (cfdWindowOpen.value) return ''
+  const diffMs = nextCfdOpenAt(new Date(nowTick.value)).getTime() - nowTick.value
+  if (diffMs <= 0) return ''
+  const totalSeconds = Math.floor(diffMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+})
+
 const completenessTooltip = computed(() => {
   const percent = auth.profile?.completeness?.percent
   if (percent === undefined) return ''
@@ -69,21 +120,39 @@ function formatMinggu(date: Date) {
   return `Minggu, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
 }
 
+// Kuota harian penuh ITU SENDIRI tidak diwakili oleh field `tersedia`
+// kategori (itu murni jeda 28 hari per kategori) -- kalau kuota hari ini
+// sudah penuh, kategori yang "tersedia" pun TIDAK BOLEH bilang "bisa
+// diperiksa sekarang", karena pasien tetap tidak bisa mendaftar hari ini.
+// Kesempatan berikutnya jadi Minggu SETELAH hari ini (bukan hari ini lagi).
+function nextSundayStrictlyAfter(from: Date): Date {
+  const d = new Date(from)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 1)
+  return nextSunday(d)
+}
+
 // Prefix teks status kategori, BUKAN dipisah dari tanggalnya, supaya
 // tanggal pada kasus limit 28 hari ASLI (alasan 'interval_28_hari') bisa
 // ditebalkan + digarisbawahi secara terpisah dari kasus "sudah CFD hari ini"
 // (yang teksnya beda & tanggalnya cukup semibold saja, bukan underline --
 // itu bukan "kena limit", cuma jatah hari ini sudah dipakai).
-function eligibilityPrefix(cat: CategoryStatus): string {
+function eligibilityPrefix(cat: CategoryStatus, kuotaPenuh: boolean): string {
+  if (cat.tersedia && kuotaPenuh) {
+    return 'Kuota hari ini penuh, boleh periksa lagi'
+  }
   if (cat.tersedia) {
-    return new Date().getDay() === 0 ? 'bisa diperiksa sekarang' : 'Bisa Periksa'
+    return cfdWindowOpen.value ? 'bisa diperiksa sekarang' : 'Bisa Periksa'
   }
   return cat.alasan === 'sudah_cfd_hari_ini' ? 'Sudah periksa hari ini, boleh lagi' : 'Boleh Periksa Lagi Mulai'
 }
 
-function eligibilityDateText(cat: CategoryStatus): string {
+function eligibilityDateText(cat: CategoryStatus, kuotaPenuh: boolean): string {
+  if (cat.tersedia && kuotaPenuh) {
+    return formatMinggu(nextSundayStrictlyAfter(new Date()))
+  }
   if (cat.tersedia) {
-    return new Date().getDay() === 0 ? '' : formatMinggu(nextSunday(new Date()))
+    return cfdWindowOpen.value ? '' : formatMinggu(nextSunday(new Date()))
   }
   return formatMinggu(nextSunday(new Date(cat.tanggal_boleh_lagi!)))
 }
@@ -198,8 +267,8 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           <Clock v-else class="size-4.5 shrink-0 text-neutral-400" />
           <p class="text-neutral-600">
             <span class="font-bold text-neutral-800">{{ kategoriLabel[key] }}:</span>
-            {{ eligibilityPrefix(cfdStatus.kelayakan.kategori[key]) }}
-            <span :class="eligibilityDateClass(cfdStatus.kelayakan.kategori[key])">{{ eligibilityDateText(cfdStatus.kelayakan.kategori[key]) }}</span>
+            {{ eligibilityPrefix(cfdStatus.kelayakan.kategori[key], cfdStatus.kelayakan.kuota.penuh) }}
+            <span :class="eligibilityDateClass(cfdStatus.kelayakan.kategori[key])">{{ eligibilityDateText(cfdStatus.kelayakan.kategori[key], cfdStatus.kelayakan.kuota.penuh) }}</span>
           </p>
         </div>
 
@@ -221,8 +290,18 @@ const kategoriLabel: Record<string, string> = { asam_urat: 'Asam Urat', choleste
           </span>
         </div>
 
+        <!-- Belum jam buka CFD (Minggu 07.00) -- tombol abu-abu, hitung
+             mundur realtime di bawah labelnya, otomatis berganti hijau +
+             bisa diklik begitu jamnya tiba (cfdWindowOpen). -->
+        <button
+          v-if="!cfdWindowOpen" type="button" disabled
+          class="mt-1 block w-full cursor-not-allowed rounded-xl bg-neutral-200 py-2.5 text-center text-sm font-semibold text-neutral-500"
+        >
+          Daftar Pemeriksaan Gratis
+          <span class="mt-0.5 block text-xs font-normal tabular-nums text-neutral-400">Dibuka dalam {{ cfdCountdownText }}</span>
+        </button>
         <NuxtLink
-          v-if="!cfdStatus.kelayakan.sudah_cfd_hari_ini && !cfdStatus.kelayakan.kuota.penuh"
+          v-else-if="!cfdStatus.kelayakan.sudah_cfd_hari_ini && !cfdStatus.kelayakan.kuota.penuh"
           to="/cfd"
           class="mt-1 block w-full rounded-xl bg-secondary-600 py-2.5 text-center text-sm font-semibold text-white active:scale-[0.98]"
         >
