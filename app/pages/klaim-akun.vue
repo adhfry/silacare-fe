@@ -313,7 +313,12 @@ async function activate() {
       <div v-if="challengeData" class="space-y-5">
         <div class="flex items-start gap-2 rounded-xl bg-primary-50 p-3 text-xs text-primary-700">
           <ShieldQuestion class="size-4 shrink-0 mt-0.5" />
-          <span>Sebagai verifikasi tambahan, lengkapi digit yang kosong sesuai NIK dan nomor HP yang baru saja Anda masukkan.</span>
+          <span v-if="challengeData.phone.blank_positions.length > 0">
+            Sebagai verifikasi tambahan, lengkapi digit yang kosong sesuai NIK dan nomor HP yang baru saja Anda masukkan.
+          </span>
+          <span v-else>
+            Sebagai verifikasi tambahan, lengkapi digit yang kosong sesuai NIK Anda.
+          </span>
         </div>
 
         <div>
@@ -331,7 +336,7 @@ async function activate() {
           </div>
         </div>
 
-        <div>
+        <div v-if="challengeData.phone.blank_positions.length > 0">
           <p class="mb-1 text-center text-sm font-semibold text-neutral-700">Nomor HP</p>
           <p class="mb-2 text-center text-xs text-neutral-400">Format 62xxxxxxxxxx (2 digit pertama selalu "62")</p>
           <div class="flex flex-wrap justify-center gap-1.5">

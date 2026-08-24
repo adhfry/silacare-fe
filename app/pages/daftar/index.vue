@@ -93,6 +93,13 @@ async function checkIdentity() {
     if (data.status === 'need_activation') {
       await requestOtp()
       flow.step = 'otp'
+    } else if (data.status === 'need_activation_via_email') {
+      // Nomor HP tercatat di SiLAKES tidak bisa dipakai kirim OTP WhatsApp
+      // (tidak cocok dengan yang diketik, atau tercatat sebagai placeholder
+      // spt "0" -- lihat PatientIdentityService::checkIdentity() backend).
+      // Langsung arahkan ke jalur klaim via email yang sudah ada, jangan
+      // tampilkan error jalan buntu.
+      await router.push(`/klaim-akun?nik=${flow.nik}&phone=${flow.phone}`)
     } else if (data.status === 'has_account') {
       flow.step = 'has_account'
     } else if (data.status === 'not_found') {
